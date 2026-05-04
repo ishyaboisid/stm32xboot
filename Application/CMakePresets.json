@@ -1,0 +1,102 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+		    "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+            }
+        },
+        {
+            "name": "Debug",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Release",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "slotA-Release",
+            "generator": "Ninja",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/slotA",
+            "cacheVariables": {
+                "LINKER_SCRIPT": "STM32F103XX_SLOTA.ld",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08004000",
+                "APP_NAME": "app_slotA"
+            }
+        },
+        {
+            "name": "slotB-Release",
+            "generator": "Ninja",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/slotB",
+            "cacheVariables": {
+                "LINKER_SCRIPT": "STM32F103XX_SLOTB.ld",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08010000",
+                "APP_NAME": "app_slotB"
+            }
+        },
+        {
+            "name": "slotA-Debug",
+            "generator": "Ninja",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/slotA",
+            "cacheVariables": {
+                "LINKER_SCRIPT": "STM32F103XX_SLOTA.ld",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08004000",
+                "APP_NAME": "app_slotA"
+            }
+        },
+        {
+            "name": "slotB-Debug",
+            "generator": "Ninja",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/slotB",
+            "cacheVariables": {
+                "LINKER_SCRIPT": "STM32F103XX_SLOTB.ld",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08010000",
+                "APP_NAME": "app_slotB"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Debug",
+            "configurePreset": "Debug"
+        },
+        {
+            "name": "Release",
+            "configurePreset": "Release"
+        },
+        {
+            "name": "slotA-Debug",
+            "configurePreset": "slotA-Debug"
+        },
+        {
+            "name": "slotB-Debug",
+            "configurePreset": "slotB-Debug"
+        },
+        {
+            "name": "slotA-Release",
+            "configurePreset": "slotA-Release"
+        },
+        {
+            "name": "slotB-Release",
+            "configurePreset": "slotB-Release"
+        }
+    ]
+}

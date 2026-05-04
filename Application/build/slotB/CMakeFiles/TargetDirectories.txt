@@ -1,0 +1,6 @@
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/CMakeFiles/Application.dir
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/CMakeFiles/edit_cache.dir
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/CMakeFiles/rebuild_cache.dir
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotB/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

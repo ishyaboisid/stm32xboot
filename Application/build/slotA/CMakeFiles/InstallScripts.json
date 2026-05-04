@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotA/cmake_install.cmake",
+		"/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotA/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
