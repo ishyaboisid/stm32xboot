@@ -1,25 +1,41 @@
+# @file send_test_dma.py
+
 import serial
 import struct
 import sys
-
+import time
 PORT       = "/dev/tty.usbmodem103"
 BAUDRATE   = 115200
 CHUNK_SIZE = 1024
 
-def compute_crc32_stm32(data: bytes) -> int:
+# def compute_crc32_stm32(data: bytes) -> int:
+#     crc = 0xFFFFFFFF
+#     remainder = len(data) % 4
+#     if remainder:
+#         data = data + b'\xFF' * (4 - remainder)
+#     for i in range(0, len(data), 4):
+#         word = struct.unpack(">I", data[i:i+4])[0]
+#         crc ^= word
+#         for _ in range(32):
+#             if crc & 0x80000000:
+#                 crc = ((crc << 1) ^ 0x04C11DB7) & 0xFFFFFFFF
+#             else:
+#                 crc = (crc << 1) & 0xFFFFFFFF
+#     return crc
+
+def compute_crc32_stm32(data: bytes) -> int: # https://github.com/Steppeschool/stm32-custom-bootloader/tree/main
     crc = 0xFFFFFFFF
-    remainder = len(data) % 4
-    if remainder:
-        data = data + b'\xFF' * (4 - remainder)
-    for i in range(0, len(data), 4):
-        word = struct.unpack(">I", data[i:i+4])[0]
-        crc ^= word
-        for _ in range(32):
+
+    for byte in data:
+        crc ^= byte << 24
+
+        for _ in range(8):
             if crc & 0x80000000:
                 crc = ((crc << 1) ^ 0x04C11DB7) & 0xFFFFFFFF
             else:
                 crc = (crc << 1) & 0xFFFFFFFF
-    return crc
+
+    return crc #& 0xFFFFFFFF
 
 def wait_response(ser) -> str:
     line = ser.readline().decode(errors="replace").strip()
@@ -70,6 +86,7 @@ def send_firmware(port: str, data: bytes):
             print(f"  Progress: {offset}/{total} bytes", end="\r")
         print()
         expect_ack(ser, "whole data")
+        time.sleep(0.05)
         # send CRC atomically — MCU receives this in one DMA transfer
         print(f"Sending CRC (0x{crc:08X})...")
         ser.write(struct.pack("<I", crc))

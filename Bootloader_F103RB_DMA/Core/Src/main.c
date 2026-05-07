@@ -371,7 +371,7 @@ static void check_for_update(void) {
     uart_rx_done = 0; uart_size = 0;
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, header_buf, sizeof(header_buf));
     __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
-    while (!uart_rx_done) {}
+    while (!uart_rx_done || uart_size != sizeof(header_buf)) {}
     if (UART_Receive(header_buf) == RECEP_OK) {
       DEBUG_PRINTF("Firmware update done! Rebooting...\r\n");
       HAL_UART_Transmit(&huart2, (uint8_t *)"OK\r\n", 4, 100);
