@@ -78,7 +78,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   volatile uint32_t vtor = SCB->VTOR;
-  SCB->VTOR = 0x08004000U;
+  SCB->VTOR = 0x08006000U;
 
   /* USER CODE END 1 */
 
@@ -234,9 +234,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void Task_App_BlinkLED(void) {
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-  HAL_Delay(3000); // 3 sec delay
+  HAL_Delay(100); // 100ms sec delay
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-  HAL_Delay(3000);
+  HAL_Delay(100);
 }
 
 #ifdef DEBUG

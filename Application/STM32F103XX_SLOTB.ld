@@ -57,13 +57,19 @@ ENTRY(Reset_Handler)
 0x08010000  Slot B       48K
 0x0801C000  Metadata     16K
 0x08020000  End
+
+New design:
+0x08000000  Bootloader   24 KB → 0x08006000
+0x08006000  Slot A       48 KB → 0x08012000
+0x08012000  Slot B       48 KB → 0x0801E000
+0x0801E000  Metadata      8 KB → 0x08020000
 */
 
 /* Specify the memory areas */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 20K
-FLASH (rx)      : ORIGIN = 0x08010000, LENGTH = 48K
+FLASH (rx)      : ORIGIN = 0x08012000, LENGTH = 48K
 }
 
 /* Highest address of the user mode stack */

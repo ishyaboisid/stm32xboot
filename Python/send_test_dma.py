@@ -103,5 +103,10 @@ def send_firmware(port: str, data: bytes):
 
 if __name__ == "__main__":
     # swap for: data = open("application.bin", "rb").read()
-    data = bytes([0xAA, 0xBB, 0xCC, 0xDD] * 256)  # 1KB test pattern
+    # data = bytes([0xAA, 0xBB, 0xCC, 0xDD] * 256)  # 1KB test pattern
+    # send_firmware(PORT, data)
+    bin_path = sys.argv[1] if len(sys.argv) > 1 else "application.bin"
+    data = open(bin_path, "rb").read()
+    print(f"Loaded: {bin_path}")
     send_firmware(PORT, data)
+# run as: python3 send_test_dma.py /Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build/slotA/Application.bin

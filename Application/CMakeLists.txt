@@ -26,7 +26,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 # Core project settings
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
-set(APP_BASE "0x08004000" CACHE STRING "Application base address")
+# set(APP_BASE "0x08006000" CACHE STRING "Application base address" FORCE)
 set(LINKER_SCRIPT "STM32F103XX_SLOTA.ld" CACHE STRING "Linker script")
 
 # Enable CMake support for ASM and C languages
@@ -40,6 +40,13 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -T${CMAKE_SOURCE_DIR}/${LINKER_SCRIPT}
 )
 message(STATUS "Using linker script: ${LINKER_SCRIPT}")
+
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND arm-none-eabi-objcopy -O binary
+        $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin
+    COMMENT "Generating .bin file"
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)

@@ -32,7 +32,8 @@
             "cacheVariables": {
                 "LINKER_SCRIPT": "STM32F103XX_SLOTA.ld",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08004000",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08006000",
+                "APP_BASE": "0x08006000",
                 "APP_NAME": "app_slotA"
             }
         },
@@ -44,7 +45,8 @@
             "cacheVariables": {
                 "LINKER_SCRIPT": "STM32F103XX_SLOTB.ld",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08010000",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08012000",
+                "APP_BASE": "0x08012000",
                 "APP_NAME": "app_slotB"
             }
         },
@@ -56,7 +58,8 @@
             "cacheVariables": {
                 "LINKER_SCRIPT": "STM32F103XX_SLOTA.ld",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08004000",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08006000",
+                "APP_BASE": "0x08006000",
                 "APP_NAME": "app_slotA"
             }
         },
@@ -68,7 +71,8 @@
             "cacheVariables": {
                 "LINKER_SCRIPT": "STM32F103XX_SLOTB.ld",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08010000",
+                "CMAKE_C_FLAGS": "-DAPP_BASE=0x08012000",
+                "APP_BASE": "0x08012000",
                 "APP_NAME": "app_slotB"
             }
         }
