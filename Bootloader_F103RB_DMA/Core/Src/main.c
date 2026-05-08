@@ -1,5 +1,21 @@
 /* USER CODE BEGIN Header */
 // todo: implement uart drivers by self to reduce flash space? 
+/* todo: a/b logic:
+uint8_t erase[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+
+switch (Flash_Verify(0x08006000, erase, 4))
+{
+    case FLASH_ERR_VERIFY:
+        // Slot A contains data
+        SLOT_START_ADDRESS = SLOTB_START_ADDRESS;
+        break;
+
+    case FLASH_OK:
+        // Slot A still erased
+        SLOT_START_ADDRESS = SLOTA_START_ADDRESS;
+        break;
+}
+*/
 #ifdef DEBUG
 #warning "DEBUG BUILD"
 #endif
