@@ -3,6 +3,12 @@
  * @note crc source: https://github.com/Steppeschool/stm32-custom-bootloader/tree/main
  */
 
+/* a/b logic:
+Program into B -> Erase A -> Copy B into A
+Essentially B is a staging area. Later we can boot from different slots for a true a/b system. 
+both slots now contain same firmware.
+*/
+
 #include "uart_reception.h"
 #include "flash.h"
 #include "stm32f1xx_hal.h"
@@ -47,13 +53,13 @@ RECEP_STATUS UART_Receive(uint8_t* received_header) {
     if(received_header[0] != RECEP_START_0) { send_nack(); return RECEP_ERR_START; }
     if(received_header[1] != RECEP_START_1) { send_nack(); return RECEP_ERR_START; }
     uint32_t total_len = (uint32_t)received_header[2] | (uint32_t)received_header[3] << 8 | (uint32_t)received_header[4] << 16 | (uint32_t)received_header[5] << 24;
-    if (total_len == 0 || total_len > (SLOTA_NUM_PAGES * FLASH_PAGE_SIZE_BL)) { send_nack(); return RECEP_ERR_SIZE; }
+    if (total_len == 0 || total_len > (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)) { send_nack(); return RECEP_ERR_SIZE; }
 
-    if (Flash_EraseSlot(SLOTA_START_ADDRESS, SLOTA_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
+    if (Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
 
     __HAL_CRC_DR_RESET(&hcrc); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
     static uint8_t chunk[RECEP_CHUNK_SIZE]; // static so it doesn't live on stack
-    uint32_t remaining_data = total_len; uint32_t write_addr = SLOTA_START_ADDRESS;
+    uint32_t remaining_data = total_len; uint32_t write_addr = SLOTB_START_ADDRESS;
     send_ack();
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < RECEP_CHUNK_SIZE ? remaining_data : RECEP_CHUNK_SIZE;

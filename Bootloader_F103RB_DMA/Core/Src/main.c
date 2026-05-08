@@ -1,21 +1,7 @@
 /* USER CODE BEGIN Header */
 // todo: implement uart drivers by self to reduce flash space? 
-/* todo: a/b logic:
-uint8_t erase[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+// todo: will implement https://github.com/kokke/tiny-AES-c into it
 
-switch (Flash_Verify(0x08006000, erase, 4))
-{
-    case FLASH_ERR_VERIFY:
-        // Slot A contains data
-        SLOT_START_ADDRESS = SLOTB_START_ADDRESS;
-        break;
-
-    case FLASH_OK:
-        // Slot A still erased
-        SLOT_START_ADDRESS = SLOTA_START_ADDRESS;
-        break;
-}
-*/
 #ifdef DEBUG
 #warning "DEBUG BUILD"
 #endif
@@ -354,11 +340,10 @@ DEBUG_PRINTF("Jumping to application...\r\n");
   //   HAL_DeInit();        // de-init peripherals + mask SysTick IRQ
   // SysTick->CTRL = 0;  // fully stop the counter itself
   // __disable_irq(); // EXTI interrupt enabled (blue button, EXTI15_10_IRQn). If fired during/after jump, before app sets up SCB->VTOR, will call the bootloader's ISR handler — which no longer has a valid stack context
-
+    SCB->VTOR = SLOTA_START_ADDRESS; // so the app doesn't need to do it 
   __set_MSP(*(volatile uint32_t *)SLOTA_START_ADDRESS); //  used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
   app_reset_handler(); // call function pointer 
   }
-  
 }
 /* User button nucleo f103rb:
 Pressed State: Low (HAL_GPIO_ReadPin returns GPIO_PIN_RESET or 0)
@@ -380,7 +365,7 @@ static void check_for_update(void) {
   } while (1);
   if (Update_Pin_State == GPIO_PIN_RESET) {
     DEBUG_PRINTF("Starting Firmware Download!\r\n");
-    // // if (Flash_ErasePage(SLOTA_START_ADDRESS) != FLASH_OK || Flash_Write(SLOTA_START_ADDRESS, test_pattern /*src*/, sizeof(test_pattern)/*len*/) != FLASH_OK || Flash_Verify(SLOTA_START_ADDRESS, test_pattern /*src*/, sizeof(test_pattern)/*len*/) != FLASH_OK) {
+    // // if (Flash_ErasePage(SLOTA_START_ADDRESS) != FLASH_OK || Flash_Write(SLOTA_START_ADDRESS, test_pattern /*src*/, sizeof(test_pattern)/*len*/) != FLASH_OK) {
     // //     DEBUG_PRINTF("Firmware update error! Halt!\r\n"); while (1) { Task_BL_BlinkLED(); };
     // }
     HAL_UART_Transmit(&huart2, (uint8_t *)"READY\r\n", 7, 100);
@@ -389,6 +374,9 @@ static void check_for_update(void) {
     __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
     while (!uart_rx_done || uart_size != sizeof(header_buf)) {}
     if (UART_Receive(header_buf) == RECEP_OK) {
+      if(Flash_CopyB2A() != FLASH_OK) {
+        DEBUG_PRINTF("Slot switch failed! Halt!\r\n"); while (1) { Task_BL_BlinkLED(); };
+      }
       DEBUG_PRINTF("Firmware update done! Rebooting...\r\n");
       HAL_UART_Transmit(&huart2, (uint8_t *)"OK\r\n", 4, 100);
       HAL_Delay(100);
