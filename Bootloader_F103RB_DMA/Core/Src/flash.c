@@ -1,12 +1,14 @@
 #include "flash.h"
 #include "stm32f1xx_hal.h"
+#include "metadata.h"
 
 /**
  * @brief private fn checks slotA start -< addr > slotB end
  * @return int 1 if valid addr
  */
 static int is_valid_slot_address(uint32_t addr) { // private fn
-    return (addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)));
+    return ( (( addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)))) ||
+    (addr >= 0x0801E000 && addr < 0x08020000) ); // todo don't hardcode
 }
 
 Flash_Status Flash_ErasePage(uint32_t page_address) {
@@ -73,19 +75,4 @@ Flash_Status Flash_Write(uint32_t dest, const uint8_t *src, size_t len) {
 
    HAL_FLASH_Lock();
    return FLASH_OK;
-}
-
-Flash_Status Flash_CopyB2A() {
-    if (Flash_EraseSlot(SLOTA_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return FLASH_ERR_ERASE;
-    
-    static uint8_t page_buf[FLASH_PAGE_SIZE_BL]; // copy page by page: 1kb budget from 20kb SRAM
-    for (uint32_t i = 0; i < SLOT_NUM_PAGES; i++) {
-        uint32_t src_addr = SLOTB_START_ADDRESS + (i * FLASH_PAGE_SIZE_BL);
-        uint32_t dst_addr = SLOTA_START_ADDRESS + (i * FLASH_PAGE_SIZE_BL);
-
-        for (uint32_t j = 0; j < FLASH_PAGE_SIZE_BL; j++) { page_buf[j] = *(volatile uint8_t *)(src_addr + j); }
-        if (Flash_Write(dst_addr, page_buf, FLASH_PAGE_SIZE_BL) != FLASH_OK) return FLASH_ERR_WRITE;
-    }
-
-    return FLASH_OK;
 }

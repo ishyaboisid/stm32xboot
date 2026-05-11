@@ -21,6 +21,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "flash.h"
+#include "metadata.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -78,7 +80,8 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   volatile uint32_t vtor = SCB->VTOR;
-  SCB->VTOR = 0x08006000U;
+//   SCB->VTOR = 0x08006000U; // slot a
+//  SCB->VTOR = 0x08012000; // slot b
 
   /* USER CODE END 1 */
 
@@ -103,6 +106,12 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   DEBUG_PRINTF("Starting application (%d.%d)\n", App_Version[0], App_Version[1]);
+  // signal to bootloader that this boot was successful
+  // write 0 to boot_count in metadata
+  Metadata meta;
+  Metadata_Load(&meta);
+  meta.bootcount = 0;
+  Metadata_Save(&meta);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -234,9 +243,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void Task_App_BlinkLED(void) {
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-  HAL_Delay(100); // 100ms sec delay
+  HAL_Delay(1000); // 100ms sec delay, tested with 100ms delay for slot b and 1sec delay for slot A
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-  HAL_Delay(100);
+  HAL_Delay(1000);
 }
 
 #ifdef DEBUG

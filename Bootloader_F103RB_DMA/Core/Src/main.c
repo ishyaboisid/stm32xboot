@@ -1,6 +1,13 @@
 /* USER CODE BEGIN Header */
 // todo: implement uart drivers by self to reduce flash space? 
 // todo: will implement https://github.com/kokke/tiny-AES-c into it
+/*
+TODO: Protocol Change:
+It's only programming into SLOT B, and only sending B need to debug and fix logic
+because every time I reboot it says slot A contains the latest even if I just programmed into B
+I need a boot count and SLOTA_LATEST to be in persistent storage
+This needs to go in metadata page - phase 7??
+*/
 
 #ifdef DEBUG
 #warning "DEBUG BUILD"
@@ -30,6 +37,7 @@
 #include "debug.h"
 #include "flash.h"
 #include "uart_reception.h"
+#include "metadata.h"
 #ifdef DEBUG
 #include "printf-stdarg.c"
 #endif
@@ -60,7 +68,7 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 const uint8_t BL_Version[2] = { BL_VERSION_MAJOR, BL_VERSION_MINOR };
-// static const uint8_t test_pattern[] = {0xDE, 0xAD, 0xBE, 0xEF};
+Metadata meta;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,8 +80,8 @@ static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 void Task_BL_SetLED(void);
 void Task_BL_BlinkLED(void);
-static void goto_application(void);
-static void check_for_update(void);
+static void goto_application(Metadata *meta);
+static void check_for_update(Metadata *meta);
 #ifdef DEBUG
 int uart_putchar(int c);
 #endif
@@ -83,7 +91,8 @@ int uart_putchar(int c);
 /* USER CODE BEGIN 0 */
 volatile uint8_t uart_rx_done = 0;
 volatile uint16_t uart_size = 0;
-uint8_t header_buf[6];
+uint8_t header_buf[2]; // header buf contains 0xAA and 0xBB no size, going from 6 to 2
+// bool SLOTA_LATEST = true; // true = slot a contains latest firmware // false = slot b contains latest firmware
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
@@ -134,8 +143,17 @@ int main(void)
   DEBUG_PRINTF("Starting bootloader (%d.%d)...\r\n", BL_Version[0], BL_Version[1]); // ls /dev/tty.*
                                                                               // screen /dev/tty.usbmodem1103 115200
                                                                               // exit: Ctrl + A, then K
-  check_for_update();
-  goto_application();
+  Metadata_Load(&meta);
+  DEBUG_PRINTF("Metadata: Slot: %d, Boot Count: %d.", meta.SLOTA_LATEST, meta.bootcount);
+  if (meta.bootcount >= BOOT_COUNT_MAX) { // rollback
+    DEBUG_PRINTF("Boot count exceeded! Forcing update mode...\r\n");
+    meta.bootcount = 0;
+    Metadata_Save(&meta);
+    // todo: implement force_update_mode(&meta) then bypass check_for_update(&meta)
+  }
+  Metadata_IncrementBootCount(&meta); // increment before jumping; todo: app should clear bootcount requirement
+  check_for_update(&meta);
+  goto_application(&meta);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -329,27 +347,41 @@ void Task_BL_BlinkLED(void) {
   HAL_Delay(1000); 
 }
 
-static void goto_application(void) {
-  if ((*(volatile uint32_t *)SLOTA_START_ADDRESS) == 0xFFFFFFFF) {
-    DEBUG_PRINTF("No app found, staying in bootloader...\r\n");
-    return;
+static void goto_application(Metadata *meta) {
+  if (meta->SLOTA_LATEST) {
+    if ((*(volatile uint32_t *)SLOTA_START_ADDRESS) == 0xFFFFFFFF) {
+        DEBUG_PRINTF("No app found, staying in bootloader...\r\n");
+        return;
+      } else {
+    DEBUG_PRINTF("Jumping to application...\r\n");
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+      void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTA_START_ADDRESS + 4U)); // slot A's reset handler
+      //   HAL_DeInit();        // de-init peripherals + mask SysTick IRQ
+      // SysTick->CTRL = 0;  // fully stop the counter itself
+      // __disable_irq(); // EXTI interrupt enabled (blue button, EXTI15_10_IRQn). If fired during/after jump, before app sets up SCB->VTOR, will call the bootloader's ISR handler — which no longer has a valid stack context
+        SCB->VTOR = SLOTA_START_ADDRESS; // so the app doesn't need to do it 
+      __set_MSP(*(volatile uint32_t *)SLOTA_START_ADDRESS); //  used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
+      app_reset_handler(); // call function pointer 
+      }
   } else {
-DEBUG_PRINTF("Jumping to application...\r\n");
- HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-  void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTA_START_ADDRESS + 4U)); // slot A's reset handler
-  //   HAL_DeInit();        // de-init peripherals + mask SysTick IRQ
-  // SysTick->CTRL = 0;  // fully stop the counter itself
-  // __disable_irq(); // EXTI interrupt enabled (blue button, EXTI15_10_IRQn). If fired during/after jump, before app sets up SCB->VTOR, will call the bootloader's ISR handler — which no longer has a valid stack context
-    SCB->VTOR = SLOTA_START_ADDRESS; // so the app doesn't need to do it 
-  __set_MSP(*(volatile uint32_t *)SLOTA_START_ADDRESS); //  used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
-  app_reset_handler(); // call function pointer 
+      if ((*(volatile uint32_t *)SLOTB_START_ADDRESS) == 0xFFFFFFFF) {
+        DEBUG_PRINTF("No app found, staying in bootloader...\r\n");
+        return;
+      } else {
+    DEBUG_PRINTF("Jumping to application...\r\n");
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+      void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTB_START_ADDRESS + 4U)); // slot B's reset handler
+        SCB->VTOR = SLOTB_START_ADDRESS;
+      __set_MSP(*(volatile uint32_t *)SLOTB_START_ADDRESS); 
+      app_reset_handler();
+      }  
   }
 }
 /* User button nucleo f103rb:
 Pressed State: Low (HAL_GPIO_ReadPin returns GPIO_PIN_RESET or 0)
 Released State: High (HAL_GPIO_ReadPin returns GPIO_PIN_SET or 1)
 */
-static void check_for_update(void) {
+static void check_for_update(Metadata *meta) {
 
   GPIO_PinState Update_Pin_State;
   uint32_t end_tick = HAL_GetTick() + 5000; // 5 seconds from now
@@ -365,20 +397,15 @@ static void check_for_update(void) {
   } while (1);
   if (Update_Pin_State == GPIO_PIN_RESET) {
     DEBUG_PRINTF("Starting Firmware Download!\r\n");
-    // // if (Flash_ErasePage(SLOTA_START_ADDRESS) != FLASH_OK || Flash_Write(SLOTA_START_ADDRESS, test_pattern /*src*/, sizeof(test_pattern)/*len*/) != FLASH_OK) {
-    // //     DEBUG_PRINTF("Firmware update error! Halt!\r\n"); while (1) { Task_BL_BlinkLED(); };
-    // }
     HAL_UART_Transmit(&huart2, (uint8_t *)"READY\r\n", 7, 100);
     uart_rx_done = 0; uart_size = 0;
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, header_buf, sizeof(header_buf));
     __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
     while (!uart_rx_done || uart_size != sizeof(header_buf)) {}
-    if (UART_Receive(header_buf) == RECEP_OK) {
-      if(Flash_CopyB2A() != FLASH_OK) {
-        DEBUG_PRINTF("Slot switch failed! Halt!\r\n"); while (1) { Task_BL_BlinkLED(); };
-      }
-      DEBUG_PRINTF("Firmware update done! Rebooting...\r\n");
+    if (UART_Receive(header_buf, meta) == RECEP_OK) {
+      Metadata_UpdateAfterRecieve(meta, meta->SLOTA_LATEST);
       HAL_UART_Transmit(&huart2, (uint8_t *)"OK\r\n", 4, 100);
+      DEBUG_PRINTF("Firmware update done! Programming into slot %d.\r\nRebooting...\r\n", meta->SLOTA_LATEST); // slot A = 1, B = 0
       HAL_Delay(100);
       HAL_NVIC_SystemReset();
     } else {

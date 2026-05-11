@@ -46,21 +46,39 @@ static uint32_t crc_accumulate(uint8_t *data, size_t len) { // todo: Using HAL c
 static void send_ack(void) { HAL_UART_Transmit(&huart2, (uint8_t *)"ACK\r\n", 5, 100); }
 static void send_nack(void) { HAL_UART_Transmit(&huart2, (uint8_t *)"NACK\r\n", 6, 100); }
 
-RECEP_STATUS UART_Receive(uint8_t* received_header) {
+RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     HAL_UART_DMAStop(&huart2);
     huart2.RxState = HAL_UART_STATE_READY;
+    uint8_t size_buf[4];
+    uart_rx_done = 0; uart_size = 0;
 
     if(received_header[0] != RECEP_START_0) { send_nack(); return RECEP_ERR_START; }
     if(received_header[1] != RECEP_START_1) { send_nack(); return RECEP_ERR_START; }
-    uint32_t total_len = (uint32_t)received_header[2] | (uint32_t)received_header[3] << 8 | (uint32_t)received_header[4] << 16 | (uint32_t)received_header[5] << 24;
-    if (total_len == 0 || total_len > (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)) { send_nack(); return RECEP_ERR_SIZE; }
+    
+    uint32_t write_addr;
+    if (meta->SLOTA_LATEST) {
+        if (Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
+        write_addr = SLOTB_START_ADDRESS;
+        HAL_UART_Transmit(&huart2, (uint8_t *)"B\r\n", 3, 100); 
+        // meta->SLOTA_LATEST = 0;
+    } else {
+        if (Flash_EraseSlot(SLOTA_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
+        write_addr = SLOTA_START_ADDRESS; 
+        HAL_UART_Transmit(&huart2, (uint8_t *)"A\r\n", 3, 100);
+        // meta->SLOTA_LATEST = 1;
+    }
+    send_ack(); // for 0xAA and 0xBB and after deciding slot to prog
 
-    if (Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, size_buf, sizeof(size_buf));
+    while (!uart_rx_done || uart_size != sizeof(size_buf)) {}
+    HAL_UART_DMAStop(&huart2);
+    uint32_t total_len = (uint32_t)size_buf[0] | (uint32_t)size_buf[1] << 8 | (uint32_t)size_buf[2] << 16 | (uint32_t)size_buf[3] << 24;
+    if (total_len == 0 || total_len > (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)) { send_nack(); return RECEP_ERR_SIZE; }
 
     __HAL_CRC_DR_RESET(&hcrc); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
     static uint8_t chunk[RECEP_CHUNK_SIZE]; // static so it doesn't live on stack
-    uint32_t remaining_data = total_len; uint32_t write_addr = SLOTB_START_ADDRESS;
-    send_ack();
+    uint32_t remaining_data = total_len; 
+    send_ack(); // for size ok
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < RECEP_CHUNK_SIZE ? remaining_data : RECEP_CHUNK_SIZE;
         uart_rx_done = 0; uart_size = 0;
@@ -94,8 +112,8 @@ RECEP_STATUS UART_Receive(uint8_t* received_header) {
             send_nack();
             return RECEP_ERR_RECV;
     }  
-    uint32_t received_crc = (uint32_t)crc_buf[0] | (uint32_t)crc_buf[1] << 8 | (uint32_t)crc_buf[2] << 16 | (uint32_t)crc_buf[3] << 24;
-    if(calculated_crc != received_crc) return RECEP_ERR_CRC32;
+    uint32_t received_crc_value = (uint32_t)crc_buf[0] | (uint32_t)crc_buf[1] << 8 | (uint32_t)crc_buf[2] << 16 | (uint32_t)crc_buf[3] << 24;
+    if(calculated_crc != received_crc_value) return RECEP_ERR_CRC32;
     send_ack();
     return RECEP_OK;
 }

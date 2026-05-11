@@ -6,7 +6,7 @@
  * @return int 1 if valid addr
  */
 static int is_valid_slot_address(uint32_t addr) { // private fn
-    return (addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOTB_NUM_PAGES * FLASH_PAGE_SIZE_BL)));
+    return (addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)));
 }
 
 Flash_Status Flash_ErasePage(uint32_t page_address) {
@@ -73,11 +73,4 @@ Flash_Status Flash_Write(uint32_t dest, const uint8_t *src, size_t len) {
 
    HAL_FLASH_Lock();
    return FLASH_OK;
-}
-
-Flash_Status Flash_Verify(uint32_t dest, const uint8_t *src, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-        if (*(volatile uint8_t *)(dest + i) != src[i]) return FLASH_ERR_VERIFY; // go to pointer address dest + i and read 1 byte (8 bits) from it
-    }
-    return FLASH_OK;
 }

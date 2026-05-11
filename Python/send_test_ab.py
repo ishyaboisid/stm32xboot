@@ -1,10 +1,18 @@
 import serial
 import struct
 import sys
+from pathlib import Path
 
-PORT     = "/dev/tty.usbmodem103"
-BAUDRATE = 115200
+PORT       = "/dev/tty.usbmodem103"
+BAUDRATE   = 115200
 CHUNK_SIZE = 1024
+
+BASE = Path("/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build")
+
+SLOT_PATHS = {
+    "A": BASE / "slotA" / "Application.bin",
+    "B": BASE / "slotB" / "Application.bin",
+}
 
 def compute_crc32_stm32(data: bytes) -> int:
     crc = 0xFFFFFFFF
@@ -29,18 +37,12 @@ def wait_response(ser) -> str:
 def expect_ack(ser, context: str):
     response = wait_response(ser)
     if response != "ACK":
-        print(f"NACK or unexpected response at: {context}")
+        print(f"  NACK or unexpected response at: {context}")
         sys.exit(1)
 
-def send_firmware(port: str, data: bytes):
-    crc = compute_crc32_stm32(data)
+def send_firmware(port: str):
+    with serial.Serial(port, BAUDRATE, timeout=15) as ser:
 
-    print(f"Firmware : {len(data)} bytes")
-    print(f"CRC32    : 0x{crc:08X}")
-
-    with serial.Serial(port, BAUDRATE, timeout=10000) as ser:
-
-        # wait for READY — ignore debug lines
         print("\nWaiting for READY...")
         while True:
             line = ser.readline().decode(errors="replace").strip()
@@ -48,58 +50,61 @@ def send_firmware(port: str, data: bytes):
             if line == "READY":
                 break
 
-        # # START_0
-        # print("Sending START_0 (0xAA)...")
-        # ser.write(bytes([0xAA]))
-        # expect_ack(ser, "START_0")
+        # send 2-byte header — MCU decides slot
+        print("Sending header (0xAA 0xBB)...")
+        ser.write(bytes([0xAA, 0xBB]))
 
-        # # START_1
-        # print("Sending START_1 (0xBB)...")
-        # ser.write(bytes([0xBB]))
-        # expect_ack(ser, "START_1")
+        # MCU responds with A or B — load the correct binary
+        print("Waiting for slot assignment...")
+        slot = None
+        while True:
+            line = ser.readline().decode(errors="replace").strip()
+            print(f"  MCU: {line}")
+            if line in ("A", "B"):
+                slot = line
+                break
+        expect_ack(ser, "header")
 
-        # # SIZE
-        # print(f"Sending SIZE ({len(data)} bytes)...")
-        # ser.write(struct.pack("<I", len(data)))
-        # ser.flush()
-        # expect_ack(ser, "SIZE")
+        # now we know the slot — load the correct binary
+        bin_path = SLOT_PATHS[slot]
+        print(f"Slot {slot} assigned — loading {bin_path}")
+        data = open(bin_path, "rb").read()
+        crc  = compute_crc32_stm32(data)
+        print(f"Firmware : {len(data)} bytes")
+        print(f"CRC32    : 0x{crc:08X}")
 
-        print(f"Sending header...")
-        header = b'\xAA\xBB' + struct.pack("<I", len(data))
-        ser.write(header)
-        expect_ack(ser, "HEADER")
+        # size
+        print(f"Sending SIZE ({len(data)} bytes)...")
+        ser.write(struct.pack("<I", len(data)))
+        expect_ack(ser, "size")
 
-        # DATA — one chunk at a time, wait for ACK after each
+        # data chunks
         print("Sending DATA...")
-        ser.write(data)
-        expect_ack(ser, "DATA")
-        total = len(data)
-        offset = 0
+        total     = len(data)
+        offset    = 0
         chunk_num = 0
         while offset < total:
             chunk = data[offset:offset + CHUNK_SIZE]
             ser.write(chunk)
             expect_ack(ser, f"chunk {chunk_num}")
-            offset += len(chunk)
+            offset    += len(chunk)
             chunk_num += 1
             print(f"  Progress: {offset}/{total} bytes", end="\r")
         print()
+        expect_ack(ser, "whole data")
 
         # CRC
         print(f"Sending CRC (0x{crc:08X})...")
         ser.write(struct.pack("<I", crc))
         expect_ack(ser, "CRC")
 
-        # final result from main.c (OK or FAIL)
         print("Waiting for final result...")
         result = wait_response(ser)
         if result == "OK":
-            print("\nSuccess — firmware written to flash")
+            print(f"\nSuccess — slot {slot} firmware written to flash, MCU rebooting")
         else:
             print(f"\nFailed — MCU replied: {result}")
             sys.exit(1)
 
 if __name__ == "__main__":
-    # swap for: data = open("application.bin", "rb").read()
-    data = bytes([0xAA, 0xBB, 0xCC, 0xDD] * 256)  # 1KB test pattern
-    send_firmware(PORT, data)
+    send_firmware(PORT)
