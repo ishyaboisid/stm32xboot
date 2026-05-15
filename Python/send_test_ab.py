@@ -2,6 +2,8 @@ import serial
 import struct
 import sys
 from pathlib import Path
+from Crypto.Cipher import AES
+import encrypt_firmware
 
 PORT       = "/dev/tty.usbmodem103"
 BAUDRATE   = 115200
@@ -13,6 +15,20 @@ SLOT_PATHS = {
     "A": BASE / "slotA" / "Application.bin",
     "B": BASE / "slotB" / "Application.bin",
 }
+
+AES_KEY = bytes([
+    0x2B, 0x7E, 0x15, 0x16,
+    0x28, 0xAE, 0xD2, 0xA6,
+    0xAB, 0xF7, 0x15, 0x88,
+    0x09, 0xCF, 0x4F, 0x3C
+])
+
+AES_IV = bytes([
+    0x00, 0x01, 0x02, 0x03,
+    0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0A, 0x0B,
+    0x0C, 0x0D, 0x0E, 0x0F
+])
 
 def compute_crc32_stm32(data: bytes) -> int:
     crc = 0xFFFFFFFF
@@ -67,9 +83,17 @@ def send_firmware(port: str):
 
         # now we know the slot — load the correct binary
         bin_path = SLOT_PATHS[slot]
-        print(f"Slot {slot} assigned — loading {bin_path}")
-        data = open(bin_path, "rb").read()
-        crc  = compute_crc32_stm32(data)
+        output_path = '/Users/siddharthmanikant/Desktop/Bachelor_Project/Python/Application.enc.bin'
+        plaintext = open(bin_path, "rb").read()
+
+        # compute CRC over plaintext — this is what MCU will have after decryption
+        crc = compute_crc32_stm32(plaintext)
+
+        # encrypt for transmission
+        encrypt_firmware.encrypt_firmware(bin_path, output_path)
+        data = open(output_path, "rb").read()
+        
+        print(f"Slot {slot} assigned")
         print(f"Firmware : {len(data)} bytes")
         print(f"CRC32    : 0x{crc:08X}")
 
@@ -102,6 +126,8 @@ def send_firmware(port: str):
         result = wait_response(ser)
         if result == "OK":
             print(f"\nSuccess — slot {slot} firmware written to flash, MCU rebooting")
+            print(data[:64].hex()) 
+            print(plaintext[:64].hex()) 
         else:
             print(f"\nFailed — MCU replied: {result}")
             sys.exit(1)

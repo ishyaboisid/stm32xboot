@@ -8,7 +8,7 @@
  */
 static int is_valid_slot_address(uint32_t addr) { // private fn
     return ( (( addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)))) ||
-    (addr >= 0x0801E000 && addr < 0x08020000) ); // todo don't hardcode
+    (addr >= METADATA_ADDRESS && addr < FLASH_EOF) );
 }
 
 Flash_Status Flash_ErasePage(uint32_t page_address) {

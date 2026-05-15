@@ -12,6 +12,8 @@ both slots now contain same firmware.
 #include "uart_reception.h"
 #include "flash.h"
 #include "stm32f1xx_hal.h"
+#include "aes_ctr.h"
+#include "aes.h"
 
 extern UART_HandleTypeDef huart2;
 extern CRC_HandleTypeDef hcrc;
@@ -25,7 +27,9 @@ uint8_t received_crc[4];
 #define BYTE_TIMEOUT_MS  2000U
 #define CHUNK_TIMEOUT_MS 10000U // 115200 baud (11.5 KB/s), 1000 bytes takes 90ms, 1 chunk = 1024, around 93ms
 
-static uint32_t crc_accumulate(uint8_t *data, size_t len) { // todo: Using HAL crc acc now?
+static struct AES_ctx ctx; // context
+
+static uint32_t crc_accumulate(uint8_t *data, size_t len) {
     size_t word_count = len / 4;
     size_t remainder = len % 4;
 
@@ -79,6 +83,9 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     static uint8_t chunk[RECEP_CHUNK_SIZE]; // static so it doesn't live on stack
     uint32_t remaining_data = total_len; 
     send_ack(); // for size ok
+
+    AES_init_ctx_iv(&ctx, AES_KEY, AES_IV); // converts 16 byte key into 11 round keys of 16 bytes each
+
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < RECEP_CHUNK_SIZE ? remaining_data : RECEP_CHUNK_SIZE;
         uart_rx_done = 0; uart_size = 0;
@@ -95,6 +102,8 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
         
         HAL_UART_DMAStop(&huart2);
         huart2.RxState = HAL_UART_STATE_READY;
+
+        AES_CTR_xcrypt_buffer(&ctx, chunk, uart_size); // decrypt before crc & flash write
 
         crc_accumulate(chunk, chunk_len);
 

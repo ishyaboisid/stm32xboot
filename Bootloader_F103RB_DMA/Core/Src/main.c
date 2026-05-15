@@ -1,14 +1,18 @@
 /* USER CODE BEGIN Header */
-// todo: implement uart drivers by self to reduce flash space? 
-// todo: will implement https://github.com/kokke/tiny-AES-c into it
-/*
-TODO: Protocol Change:
-It's only programming into SLOT B, and only sending B need to debug and fix logic
-because every time I reboot it says slot A contains the latest even if I just programmed into B
-I need a boot count and SLOTA_LATEST to be in persistent storage
-This needs to go in metadata page - phase 7??
-*/
+/* 
+TODOS:
+  - Implement rollback
+  - Implement uart driver by self to reduce flash space
+  - Fix includes
+  - Calculate crc_accumulate by hand for report
 
+adding external code from: 
+  AES-128 CTR: https://github.com/kokke/tiny-AES-c
+  ECDSA: https://github.com/kmackay/micro-ecc 
+    https://asecuritysite.com/ecies/index
+  CRC32: https://github.com/Steppeschool/stm32-custom-bootloader/tree/main
+  SHA-256: https://github.com/B-Con/crypto-algorithms
+*/
 #ifdef DEBUG
 #warning "DEBUG BUILD"
 #endif
@@ -52,6 +56,11 @@ This needs to go in metadata page - phase 7??
 /* USER CODE BEGIN PD */
 #define BL_VERSION_MAJOR 0
 #define BL_VERSION_MINOR 1
+#ifdef DEBUG
+#define DBG_FORCE_UPDATE 1
+#else
+#define DBG_FORCE_UPDATE 0
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -144,14 +153,14 @@ int main(void)
                                                                               // screen /dev/tty.usbmodem1103 115200
                                                                               // exit: Ctrl + A, then K
   Metadata_Load(&meta);
-  DEBUG_PRINTF("Metadata: Slot: %d, Boot Count: %d.", meta.SLOTA_LATEST, meta.bootcount);
+  DEBUG_PRINTF("Metadata: Slot: %d, Boot Count: %d.\r\n", meta.SLOTA_LATEST, meta.bootcount);
   if (meta.bootcount >= BOOT_COUNT_MAX) { // rollback
     DEBUG_PRINTF("Boot count exceeded! Forcing update mode...\r\n");
     meta.bootcount = 0;
     Metadata_Save(&meta);
     // todo: implement force_update_mode(&meta) then bypass check_for_update(&meta)
   }
-  Metadata_IncrementBootCount(&meta); // increment before jumping; todo: app should clear bootcount requirement
+  Metadata_IncrementBootCount(&meta); // increment before jumping
   check_for_update(&meta);
   goto_application(&meta);
   /* USER CODE END 2 */
@@ -395,7 +404,7 @@ static void check_for_update(Metadata *meta) {
       break;
     }
   } while (1);
-  if (Update_Pin_State == GPIO_PIN_RESET) {
+  if (Update_Pin_State == GPIO_PIN_RESET /*|| DBG_FORCE_UPDATE*/) {
     DEBUG_PRINTF("Starting Firmware Download!\r\n");
     HAL_UART_Transmit(&huart2, (uint8_t *)"READY\r\n", 7, 100);
     uart_rx_done = 0; uart_size = 0;

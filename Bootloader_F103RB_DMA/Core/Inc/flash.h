@@ -8,6 +8,7 @@
 #define SLOTA_START_ADDRESS 0x08006000 // 0x08004000U
 #define SLOT_NUM_PAGES 48U
 #define SLOTB_START_ADDRESS 0x08012000 // 0x08010000U
+#define FLASH_EOF 0x08020000 // end of flash
 
 typedef enum {
     FLASH_OK = 0,

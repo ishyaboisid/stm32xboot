@@ -48,6 +48,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/flash.c
     Core/Src/uart_reception.c
     Core/Src/metadata.c
+    Core/Src/aes.c 
+    Core/Src/aes_ctr.c
 )
 
 # Add include paths
