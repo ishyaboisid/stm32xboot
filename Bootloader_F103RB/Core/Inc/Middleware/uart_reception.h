@@ -29,6 +29,7 @@ typedef enum {
     RECEP_ERR_RECV,
     RECEP_ERR_CRC32,
     RECEP_ERR_SIG,
+    RECEP_ERR_VERSION,
 } RECEP_STATUS;
 
 RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta);

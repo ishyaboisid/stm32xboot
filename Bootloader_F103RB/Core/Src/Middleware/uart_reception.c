@@ -6,6 +6,7 @@
 #include "Middleware/uart_reception.h"
 #include "Middleware/flash.h"
 #include "Middleware/verify.h"
+#include "Middleware/metadata.h"
 #include "stm32f1xx_hal.h"
 #include "AES128/aes_ctr.h"
 #include "AES128/aes.h"
@@ -53,6 +54,15 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
 
     if(received_header[0] != RECEP_START_0) { send_nack(); return RECEP_ERR_START; }
     if(received_header[1] != RECEP_START_1) { send_nack(); return RECEP_ERR_START; }
+
+    uint8_t incoming_fwv_major = received_header[2];
+    uint8_t incoming_fwv_minor = received_header[3];
+    // #ifndef DEBUG 
+    if (incoming_fwv_major < meta->FW_VER_MAJOR || (incoming_fwv_major == meta->FW_VER_MAJOR && incoming_fwv_minor <= meta->FW_VER_MINOR)) { // will be disregarded when debugging
+        send_nack();
+        return RECEP_ERR_VERSION;
+    }
+    // #endif
     
     uint32_t write_addr;
     if (meta->SLOTA_LATEST) {
@@ -66,7 +76,7 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
         HAL_UART_Transmit(&huart2, (uint8_t *)"A\r\n", 3, 100);
         // meta->SLOTA_LATEST = 1;
     }
-    send_ack(); // for 0xAA and 0xBB and after deciding slot to prog
+    send_ack(); // for 0xAA and 0xBB, fw version approv and after deciding slot to prog
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, size_buf, sizeof(size_buf));
     while (!uart_rx_done || uart_size != sizeof(size_buf)) {}
@@ -131,6 +141,10 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
         Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES);
         return RECEP_ERR_SIG; 
     }
+    // #ifndef DEBUG 
+    meta->FW_VER_MAJOR = incoming_fwv_major;
+    meta->FW_VER_MINOR = incoming_fwv_minor;
+    // #endif
     send_ack(); 
 
     return RECEP_OK;

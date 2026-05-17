@@ -18,6 +18,8 @@ SLOT_PATHS = {
     "B": BASE / "slotB" / "Application.bin",
 }
 
+FW_VERSION = (1,3)
+
 AES_KEY = bytes([
     0x2B, 0x7E, 0x15, 0x16,
     0x28, 0xAE, 0xD2, 0xA6,
@@ -68,9 +70,9 @@ def send_firmware(port: str):
             if line == "READY":
                 break
 
-        # send 2-byte header — MCU decides slot
-        print("Sending header (0xAA 0xBB)...")
-        ser.write(bytes([0xAA, 0xBB]))
+        # send 4-byte header, and fw ver, MCU decides slot
+        print("Sending header (0xAA 0xBB) and fw ver...")
+        ser.write(bytes([0xAA, 0xBB, FW_VERSION[0], FW_VERSION[1]]))
 
         # MCU responds with A or B — load the correct binary
         print("Waiting for slot assignment...")

@@ -13,6 +13,7 @@ typedef struct {
     uint32_t magic;
     bool SLOTA_LATEST;
     uint32_t bootcount; // increment every boot, clear by successful firmware
+    uint8_t FW_VER_MAJOR, FW_VER_MINOR;
 } Metadata;
 
 Flash_Status Metadata_Load(Metadata *m); // reads from flash, writes defaults

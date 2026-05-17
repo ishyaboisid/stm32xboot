@@ -4,12 +4,6 @@ TODOS:
   - Implement uart driver by self to reduce flash space
   - Fix includes
   - Calculate crc_accumulate by hand for report
-  - IMPORTANT: MCUboot avoids directly depending on printf() by using a lightweight logging abstraction layer 
-              (BOOT_LOG_INF, BOOT_LOG_ERR, etc.) that routes messages to a backend chosen per platform (Zephyr logging, 
-              UART, RTT, or completely disabled). In your bootloader, you can do the same by replacing printf calls with 
-              simple macros that ultimately call a tiny UART string function using HAL_UART_Transmit(), while 
-              compiling logging out entirely in builds to avoid pulling in the large printf formatting code from newlib.
-
 adding external code from: 
   AES-128 CTR: https://github.com/kokke/tiny-AES-c
   ECDSA: https://github.com/kmackay/micro-ecc 
@@ -47,6 +41,7 @@ adding external code from:
 #include "Middleware/uart_reception.h"
 #include "Middleware/metadata.h"
 #if BL_LOG_LEVEL == BL_LOG_PRINTF
+#warning "USING PRINTF"
 #include "printf-stdarg.c"
 #endif
 /* USER CODE END Includes */
@@ -105,7 +100,7 @@ int Rollback_Check(Metadata *m);
 /* USER CODE BEGIN 0 */
 volatile uint8_t uart_rx_done = 0;
 volatile uint16_t uart_size = 0;
-uint8_t header_buf[2]; // header buf contains 0xAA and 0xBB no size, going from 6 to 2
+uint8_t header_buf[4]; // header buf contains 0xAA and 0xBB no size (6b->2b) added version in header 2b+2b=4b
 // bool SLOTA_LATEST = true; // true = slot a contains latest firmware // false = slot b contains latest firmware
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -118,10 +113,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 }
 
 int Rollback_Check(Metadata *m) {
-  if (meta.bootcount < BOOT_COUNT_MAX) return 0;
-  meta.SLOTA_LATEST = !meta.SLOTA_LATEST; // flip to previous slot 
-  meta.bootcount = 0;
-  Metadata_Save(&meta); 
+  if (m->bootcount < BOOT_COUNT_MAX) return 0;
+  m->SLOTA_LATEST = !meta.SLOTA_LATEST; // flip to previous slot 
+  m->bootcount = 0;
+  Metadata_Save(m); 
   return 1;
 }
 /* USER CODE END 0 */

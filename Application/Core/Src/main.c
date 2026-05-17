@@ -111,6 +111,8 @@ int main(void)
   Metadata meta;
   Metadata_Load(&meta);
   meta.bootcount = 0;
+  // meta.FW_VER_MAJOR = APP_VERSION_MAJOR; // todo important don't know if I need it
+  // meta.FW_VER_MINOR = APP_VERSION_MINOR; 
   Metadata_Save(&meta);
   /* USER CODE END 2 */
 

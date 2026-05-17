@@ -9,6 +9,8 @@ Flash_Status Metadata_Load(Metadata *m) {
         m->magic = METADATA_MAGIC;
         m->SLOTA_LATEST = true;
         m->bootcount = 0;
+        m->FW_VER_MAJOR = 0x0;
+        m->FW_VER_MINOR = 0x0;
         return Metadata_Save(m);
     }
 }

@@ -2,7 +2,7 @@
 - Hardcoded Dual Slots A/B
 - Updates over UART (python tool)
 - Compile time configurable logging
-- Security (uECC, sha246, aes128)
+- Security (uECC P-256, sha246, aes128)
 - Rollback protection: Bootcount check
 
 ## Flash Memory Layout
@@ -34,7 +34,7 @@
   - CAN bus
 - Compile time configurable logging over UART, printf-stdarg.c or no logging. 
 - Secure:
-  - ECDSA key generation (uECC) over SHA-256 digests (B-con/crypto-algorithms) - signing & verification
+  - P-256 ECDSA key generation (uECC) over SHA-256 digests (B-con/crypto-algorithms) - signing & verification
   - AES-128 Encrypted (tiny-aes)
   - Hardware CRC32 
 - Rollback Protection:
