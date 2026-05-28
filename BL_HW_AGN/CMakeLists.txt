@@ -86,7 +86,7 @@ target_link_options(Bootloader PRIVATE
     --specs=nosys.specs
 )
 
-# ── post-build: generate .bin ─────────────────────────────────────
+# ── post-build ─────────────────────────────────────
 add_custom_command(TARGET Bootloader POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O binary
         $<TARGET_FILE:Bootloader>
@@ -98,24 +98,12 @@ add_custom_command(TARGET Bootloader POST_BUILD
     COMMAND ${CMAKE_SIZE} $<TARGET_FILE:Bootloader>
     COMMENT "Binary size"
 )
-# ── post-build ────────────────────────────────────────────────────
-add_custom_command(TARGET Bootloader POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary
-        $<TARGET_FILE:Bootloader>
-        ${CMAKE_BINARY_DIR}/Bootloader.bin
-    COMMENT "Generating Bootloader.bin"
-)
 
 add_custom_command(TARGET Bootloader POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O ihex
         $<TARGET_FILE:Bootloader>
         ${CMAKE_BINARY_DIR}/Bootloader.hex
     COMMENT "Generating Bootloader.hex"
-)
-
-add_custom_command(TARGET Bootloader POST_BUILD
-    COMMAND ${CMAKE_SIZE} --format=berkeley $<TARGET_FILE:Bootloader>
-    COMMENT "Binary size"
 )
 
 message(STATUS "ELF output: ${CMAKE_BINARY_DIR}/Bootloader.elf")
