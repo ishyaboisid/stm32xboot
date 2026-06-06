@@ -22,6 +22,6 @@ int uart_putchar(int c);
 void Task_BL_SetLED(void);
 void Task_BL_BlinkLED(void);
 static void goto_application(Metadata *meta);
-static void check_for_update(Metadata *meta);
+static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE);
 int Rollback_Check(Metadata *m);
 void update_image_state(Metadata *m);

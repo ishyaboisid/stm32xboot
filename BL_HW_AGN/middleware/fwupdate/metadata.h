@@ -29,6 +29,10 @@ typedef struct __attribute__((packed)) {
     uint16_t _pad;
     uint32_t image_state;
     uint32_t runtime_fault_count;
+    uint32_t sequence; // monotonically increasing — higher = newer
+    uint32_t bytes_written;
+    uint32_t fw_size;
+    uint8_t iv[16];
 } Metadata;
 
 // _Static_assert(sizeof(Metadata) == 16, "Metadata struct size not 16b"); // todo is failing

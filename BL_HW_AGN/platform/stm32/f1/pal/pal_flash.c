@@ -4,7 +4,7 @@
 
 static int is_valid_slot_address(uint32_t addr) { // private fn
     return ( (( addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)))) ||
-    (addr >= METADATA_ADDRESS && addr < FLASH_EOF) );
+    (addr >= METADATA_ADDRESS_SLOT1 && addr < FLASH_EOF) );
 }
 
 PAL_Flash_StatusTypeDef PAL_Flash_ErasePage(uint32_t page_address) {

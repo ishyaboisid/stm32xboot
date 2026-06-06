@@ -19,7 +19,8 @@ uint32_t PAL_CRC_Accumulate(uint8_t *data, size_t len) {
     } 
     if (remainder > 0) { // for e.g. data = [0xAF, 0xBC, 0xD9, 0xC5, 0x70, 0x3E]. Remainder = 2 (i = 0, 1), therefore 
         uint32_t last = 0xFFFFFFFFU;
-        for (size_t i = 0; i < remainder; i++) { // todo: calculate by hand
+        /** @todo CALCULATE ACCUMULATE ALGO by hard to better understand */
+        for (size_t i = 0; i < remainder; i++) {
             last = (last & ~(0xFFU << (24 - i*8))) | ((uint32_t)data[word_count*4 + i] << (24 - i*8));
         }
         hcrc.Instance->DR = last;

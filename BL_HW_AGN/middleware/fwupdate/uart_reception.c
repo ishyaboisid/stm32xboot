@@ -21,26 +21,16 @@ uint8_t received_crc[4];
 
 static struct AES_ctx ctx; // context
 
-static uint32_t crc_accumulate(uint8_t *data, size_t len) { // temp
-    size_t word_count = len / 4;
-    size_t remainder = len % 4;
-
-    for (size_t i = 0; i < word_count; i++) { // feed 32bit words msb first into CRC->DR
-        uint32_t word = (uint32_t)data[i*4] << 24 | (uint32_t)data[i*4 + 1] << 16 | (uint32_t)data[i*4 + 2] << 8 | (uint32_t)data[i*4 + 3]; // MSB to LSB
-        hcrc.Instance->DR = word;
-    } 
-    if (remainder > 0) { // for e.g. data = [0xAF, 0xBC, 0xD9, 0xC5, 0x70, 0x3E]. Remainder = 2 (i = 0, 1), therefore 
-        uint32_t last = 0xFFFFFFFFU;
-        for (size_t i = 0; i < remainder; i++) { // todo: calculate by hand
-            last = (last & ~(0xFFU << (24 - i*8))) | ((uint32_t)data[word_count*4 + i] << (24 - i*8));
-        }
-        hcrc.Instance->DR = last;
-    }
-    return hcrc.Instance->DR;
-}
-
 static void send_ack(void) { PAL_UART_Transmit((uint8_t *)"ACK\r\n", 5, 100); }
 static void send_nack(void) { PAL_UART_Transmit((uint8_t *)"NACK\r\n", 6, 100); }
+static void send_resume_offset(uint32_t bytes_written) { 
+    PAL_UART_Transmit((uint8_t *)bytes_written, sizeof(bytes_written), 100);
+}
+
+void Slot_UpdateProgress(Metadata *m, uint32_t bytes_written) {
+    m->bytes_written = bytes_written;
+    Metadata_Save(m);
+}
 
 RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     uint8_t size_buf[4];
@@ -78,9 +68,18 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     PAL_CRC_Reset(); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
     static uint8_t chunk[UART_RECEP_CHUNK_SIZE]; // static so it doesn't live on stack
     uint32_t remaining_data = total_len; 
+    meta->fw_size = total_len; 
+    Metadata_Save(meta);
     send_ack(); // for size ok
+    
+    uint8_t iv[16];
+    PAL_UARTEx_Receive_DMA(meta->iv, sizeof(iv));
+    Metadata_Save(meta);
+    send_ack(); // for IV recieved
 
-    AES_init_ctx_iv(&ctx, AES_KEY, AES_IV); // converts 16 byte key into 11 round keys of 16 bytes each
+    AES_init_ctx_iv(&ctx, AES_KEY, meta->iv); // converts 16 byte key into 11 round keys of 16 bytes each
+
+    int chunk_count; 
 
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < UART_RECEP_CHUNK_SIZE ? remaining_data : UART_RECEP_CHUNK_SIZE;
@@ -96,6 +95,8 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
         if (PAL_Flash_Write(write_addr, chunk, chunk_len) != FLASH_OK) return RECEP_ERR_RECV;
         write_addr += chunk_len;
         remaining_data -= chunk_len;
+        chunk_count++;
+        Slot_UpdateProgress(meta, chunk_count * UART_RECEP_CHUNK_SIZE);
         send_ack();
     }
     send_ack(); // for data as a whole

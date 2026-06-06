@@ -1,10 +1,11 @@
-// IMPORTANT TODO: FIX CRC !! 
-#include "main.h"
+ #include "main.h"
 Metadata meta;
+
 extern uint32_t iwdg_reset;
 
 CRC_HandleTypeDef hcrc;
 
+/** @todo TEST IWDG AND COMMIT */
 // IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart2;
@@ -15,7 +16,7 @@ uint8_t header_buf[4]; // header buf contains 0xAA and 0xBB no size (6b->2b) add
 // bool SLOTA_LATEST = true; // true = slot a contains latest firmware // false = slot b contains latest firmware
 
 const uint8_t BL_Version[2] = { BL_VERSION_MAJOR, BL_VERSION_MINOR };
-
+uint8_t AUTOMATIC_UPDATE = 0;
 #if BL_LOG_LEVEL == BL_LOG_PRINTF
 int uart_putchar(int c)
 {
@@ -25,8 +26,7 @@ int uart_putchar(int c)
 #endif
 
 int Rollback_Check(Metadata *m) {
-  if (m->bootcount <= BOOT_COUNT_MAX) return 0;
-  if (m->runtime_fault_count <= RUNTIME_BOOT_COUNT_MAX) return 0;
+  if (m->bootcount <= BOOT_COUNT_MAX || (m->runtime_fault_count <= RUNTIME_BOOT_COUNT_MAX)) return 0;
   m->SLOTA_LATEST = !meta.SLOTA_LATEST; // flip to previous slot 
   m->bootcount = 0;
   m->image_state = IMG_STATE_REVERTED;
@@ -63,17 +63,33 @@ void update_image_state(Metadata *m) {
 int main(void)
 {
   System_Init();
+  
+  Metadata_Load(&meta);
+
+  uint32_t power_loss_reset = (meta.bytes_written > 0) && (meta.bytes_written < meta.fw_size) && (meta.fw_size > 0);
 
   Task_BL_SetLED();
 
   BL_LOG("Starting bootloader (0.1)\r\n");
 
-  Metadata_Load(&meta);
-
   update_image_state(&meta);
-  
-  check_for_update(&meta);
 
+  if (power_loss_reset) {
+      if (meta.SLOTA_LATEST) {
+        PAL_Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES);
+      } else {
+        PAL_Flash_EraseSlot(SLOTA_START_ADDRESS, SLOT_NUM_PAGES); 
+      }
+      AUTOMATIC_UPDATE = 1;
+          // clear progress so this doesn't trigger again next boot
+    meta.bytes_written = 0;
+    meta.fw_size       = 0;
+    Metadata_Save(&meta);
+    BL_LOG("Slot erased — waiting for retransmit\r\n");
+  }
+
+  check_for_update(&meta, AUTOMATIC_UPDATE);
+  
   goto_application(&meta);
 
   while (1) {}
@@ -90,6 +106,7 @@ void Task_BL_BlinkLED(void) {
   PAL_Delay(1000); 
 }
 
+/** @todo TEST IWDG AND COMMIT */
 static void goto_application(Metadata *meta) {
   if (meta->SLOTA_LATEST) {
     if ((*(volatile uint32_t *)SLOTA_START_ADDRESS) == 0xFFFFFFFF) {
@@ -117,8 +134,8 @@ static void goto_application(Metadata *meta) {
       void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTB_START_ADDRESS + 4U));
       SCB->VTOR = SLOTB_START_ADDRESS;
       __set_MSP(*(volatile uint32_t *)SLOTB_START_ADDRESS); 
-      // #ifdef DEBUG  // don't let breakpoints trigger resets
-      // PAL_FREEZE_IWDG();  // don't let breakpoints trigger resets
+      // #ifdef DEBUG
+      // PAL_FREEZE_IWDG();
       // #endif
       // PAL_MX_IWDG_Init(); 
       app_reset_handler();
@@ -130,7 +147,7 @@ static void goto_application(Metadata *meta) {
 Pressed State: Low (HAL_GPIO_ReadPin returns GPIO_PIN_RESET or 0)
 Released State: High (HAL_GPIO_ReadPin returns GPIO_PIN_SET or 1)
 */
-static void check_for_update(Metadata *meta) {
+static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
 
   PAL_GPIO_PinState Update_Pin_State;
   uint32_t end_tick = PAL_GetTick() + 5000; // 5 seconds from now
@@ -144,7 +161,7 @@ static void check_for_update(Metadata *meta) {
       break;
     }
   } while (1);
-  if (Update_Pin_State == GPIO_PIN_RESET /*|| DBG_FORCE_UPDATE*/) {
+  if (Update_Pin_State == GPIO_PIN_RESET || AUTOMATIC_UPDATE /*|| DBG_FORCE_UPDATE*/) {
     BL_LOG("Starting Firmware Download!\r\n");
     PAL_UART_Transmit((uint8_t *)"READY\r\n", 7, 100);
     PAL_UARTEx_Receive_DMA(header_buf, sizeof(header_buf));

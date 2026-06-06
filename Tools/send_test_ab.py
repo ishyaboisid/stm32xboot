@@ -6,6 +6,7 @@ from Crypto.Cipher import AES
 import encrypt_firmware
 import sign_firmware
 import keygen
+import time
 
 PORT       = "/dev/tty.usbmodem103"
 BAUDRATE   = 115200
@@ -25,13 +26,6 @@ AES_KEY = bytes([
     0x28, 0xAE, 0xD2, 0xA6,
     0xAB, 0xF7, 0x15, 0x88,
     0x09, 0xCF, 0x4F, 0x3C
-])
-
-AES_IV = bytes([
-    0x00, 0x01, 0x02, 0x03,
-    0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0A, 0x0B,
-    0x0C, 0x0D, 0x0E, 0x0F
 ])
 
 def compute_crc32_stm32(data: bytes) -> int:
@@ -54,22 +48,42 @@ def wait_response(ser) -> str:
     print(f"  MCU: {line}")
     return line
 
-def expect_ack(ser, context: str):
-    response = wait_response(ser)
-    if response != "ACK":
-        print(f"  NACK or unexpected response at: {context}")
-        sys.exit(1)
+def waiting_for_ready(ser, timeout_s=5):
+    print("\nWaiting for READY...")
+    start = time.monotonic()
 
-def send_firmware(port: str):
-    with serial.Serial(port, BAUDRATE, timeout=15) as ser:
+    while True:
+        if time.monotonic() - start > timeout_s:
+            raise TimeoutError("READY timeout")
 
-        print("\nWaiting for READY...")
-        while True:
-            line = ser.readline().decode(errors="replace").strip()
-            print(f"  MCU: {line}")
-            if line == "READY":
-                break
+        line = ser.readline().decode(errors="replace").strip()
+        if not line:
+            continue
 
+        print(f"  MCU: {line}")
+
+        if line == "READY":
+            return
+
+def expect_ack(ser, context, timeout_s=5000):
+    start = time.monotonic()
+
+    while True:
+        if time.monotonic() - start > timeout_s:
+            raise TimeoutError(f"ACK timeout at {context}")
+
+        line = ser.readline().decode(errors="replace").strip()
+        if not line:
+            continue
+
+        print(f"  MCU: {line}")
+
+        if line == "ACK":
+            return
+
+        raise RuntimeError(f"Unexpected response at {context}: {line}")
+
+def send_firmware(ser):
         # send 4-byte header, and fw ver, MCU decides slot
         print("Sending header (0xAA 0xBB) and fw ver...")
         ser.write(bytes([0xAA, 0xBB, FW_VERSION[0], FW_VERSION[1]]))
@@ -97,7 +111,7 @@ def send_firmware(port: str):
         sign_firmware.sign_firmware(private_key_path, bin_path, signed_path)
 
         # step 2: encrypt the signed binary
-        encrypt_firmware.encrypt_firmware(signed_path, encrypted_path)
+        iv = encrypt_firmware.encrypt_firmware(signed_path, encrypted_path)
 
         # step 3: CRC over signed plaintext (what MCU has after decryption)
         signed_plaintext = open(signed_path, "rb").read()
@@ -114,6 +128,9 @@ def send_firmware(port: str):
         print(f"Sending SIZE ({len(data)} bytes)...")
         ser.write(struct.pack("<I", len(data)))
         expect_ack(ser, "size")
+
+        ser.write(iv)
+        expect_ack(ser, "IV")
 
         # data chunks
         print("Sending DATA...")
@@ -148,5 +165,15 @@ def send_firmware(port: str):
             sys.exit(1)
 
 if __name__ == "__main__":
-    keygen.keygen
-    send_firmware(PORT)
+    keygen.keygen # run again before reconnecting power to mcu after power loss 
+    while True:
+        try:
+            ser = serial.Serial(PORT, BAUDRATE, timeout=0.2)
+            print(f"Connected to {PORT}")
+            break
+        except serial.SerialException:
+            print("Waiting for device...")
+            time.sleep(1)
+    with serial.Serial(PORT, BAUDRATE, timeout=0.2) as ser:
+        waiting_for_ready(ser, timeout_s=10)
+        send_firmware(ser)
