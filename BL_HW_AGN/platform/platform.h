@@ -1,6 +1,7 @@
 #pragma once
 
 #if defined(BOARD_F103RB)
+  #define PAL_MAX_DELAY      0xFFFFFFFFU
   #include "bsp/f103rb/board_config.h"
   #include "bsp/f103rb/pinmap.h"
   #include "stm32/f1/system_init.h"

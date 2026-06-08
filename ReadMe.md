@@ -17,6 +17,24 @@
     - Erases and re-programs the same slot once power is back
   - IWDG runtime check for application
 
+# Deterministic Metadata State Machine:
+NONE
+  │  trigger: Metadata_UpdateAfterReceive() called after successful UART reception
+  ▼
+PENDING
+  │  trigger: update_image_state() on next boot detects PENDING
+  ▼
+TRIAL
+  │  trigger: app calls StartupConfirm() → Metadata_Save()
+  ▼
+HEALTHY
+  │  trigger: IWDG reset detected or bootcount exceeded in HEALTHY state
+  ▼
+REVERTED + slot flip
+  │  after slot flip mark older app as healthy
+  ▼
+HEALTHY
+
 ## Flash Memory Layout STM32F103RB
 |            | Start Address | Size  | End Address |
 |------------|---------------|-------|--------------|

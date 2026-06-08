@@ -1,4 +1,4 @@
-from Crypto.Cipher import AES  # pip install pycryptodome
+from Crypto.Cipher import AES
 import struct
 from pathlib import Path
 import sys
@@ -21,4 +21,3 @@ def encrypt_firmware(input_path: str, output_path: str):
 
 if __name__ == "__main__":
     encrypt_firmware(sys.argv[1], sys.argv[2])
-# usage: python encrypt_firmware.py Application.bin Application.enc.bin

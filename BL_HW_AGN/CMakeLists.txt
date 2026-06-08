@@ -22,7 +22,7 @@ set(APP_SOURCES
     bl_src/main.c
     middleware/fwupdate/uart_reception.c
     middleware/fwupdate/metadata.c
-    middleware/fwupdate/verify.c
+    middleware/crypto/verify.c
     middleware/crypto/aes_ctr.c
     third_party/printf-stdarg.c
     third_party/aes/src/aes.c

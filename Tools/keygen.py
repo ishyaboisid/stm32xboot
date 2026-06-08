@@ -38,4 +38,4 @@ static const uint8_t ECDSA_PUBLIC_KEY[64] = {{
     print(f"Public key header → {public_c_path}")
 
 if __name__ == "__main__":
-    keygen("private_key.pem", "/Users/siddharthmanikant/Desktop/Bachelor_Project/BL_HW_AGN/middleware/crypto/public_key.h") # "/Users/siddharthmanikant/Desktop/Bachelor_Project/Bootloader_F103RB/Core/Inc/uECC/public_key.h")
+    keygen("private_key.pem", "../BL_HW_AGN/middleware/crypto/public_key.h")

@@ -25,4 +25,3 @@ def sign_firmware(private_key_path: str, firmware_path: str, output_path: str):
 
 if __name__ == "__main__":
     sign_firmware(sys.argv[1], sys.argv[2], sys.argv[3])
-# usage: python sign_firmware.py private_key.pem firmware.enc.bin firmware.signed.bin

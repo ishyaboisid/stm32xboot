@@ -7,19 +7,18 @@
 /* Features */
 /** @todo INCLUDES.H ADDITION */
 /** @todo TEST IWDG AND COMMIT */
+/** @todo After power loss resume write feature using bytes_written */
+/** @todo implement PAL functions needed before jumping to app */
+/** @todo test goto_application function */
+/** @todo Make modules removable/configurable: CRC32, AES128 Encryption, SHA256 Hashing, EDCSA, and EDCSA Curve Selection */
 
 /* Learning */
 /** @todo CALCULATE ACCUMULATE ALGO */
 
 /* YTI */
-/** @todo Make Application HW AGN */
-/** @todo Refactor scripts */
 /** @todo Shell */
 /** @todo Settings KV store and Logging framework */
 /** @todo Diagnostics */
-/** @todo Make modules removable/configurable: CRC32, AES128 Encryption, SHA256 Hashing, EDCSA, and EDCSA Curve Selection */
 /** @todo Zephyr Integration for Bootloader + App */
-/** @todo Github Actions */
-/** @todo Make a stronger demo application */
-/** @todo Jenkins CI/CD: Tests in gtest/Lua */
+/** @todo Github Actions: Tests in gtest/Lua, static unit cppcheck clang-tidy */
 /** @todo ESP32 OTA updates */

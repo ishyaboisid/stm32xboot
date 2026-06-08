@@ -7,12 +7,13 @@ import encrypt_firmware
 import sign_firmware
 import keygen
 import time
+import argparse
 
-PORT       = "/dev/tty.usbmodem103"
-BAUDRATE   = 115200
+# PORT       = "/dev/tty.usbmodem103"
+# BAUDRATE   = 115200
 CHUNK_SIZE = 1024
 
-BASE = Path("/Users/siddharthmanikant/Desktop/Bachelor_Project/Application/build")
+BASE = Path("../Application/build")
 
 SLOT_PATHS = {
     "A": BASE / "slotA" / "Application.bin",
@@ -27,6 +28,26 @@ AES_KEY = bytes([
     0xAB, 0xF7, 0x15, 0x88,
     0x09, 0xCF, 0x4F, 0x3C
 ])
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Firmware uploader"
+    )
+
+    parser.add_argument(
+        "--port",
+        required=True,
+        help="Serial port (e.g. /dev/tty.usbmodem103)"
+    )
+
+    parser.add_argument(
+        "--baudrate",
+        type=int,
+        default=115200,
+        help="Baud rate (default: 115200)"
+    )
+
+    return parser.parse_args()
 
 def compute_crc32_stm32(data: bytes) -> int:
     crc = 0xFFFFFFFF
@@ -104,9 +125,9 @@ def send_firmware(ser):
         plaintext = open(bin_path, "rb").read()
 
         # step 1: sign the plaintext — appends 64-byte signature to end
-        signed_path   = '/Users/siddharthmanikant/Desktop/Bachelor_Project/Tools/Application.signed.bin'
-        encrypted_path = '/Users/siddharthmanikant/Desktop/Bachelor_Project/Tools/Application.enc.bin'
-        private_key_path = '/Users/siddharthmanikant/Desktop/Bachelor_Project/Tools/private_key.pem'
+        signed_path   = 'Application.signed.bin'
+        encrypted_path = 'Application.enc.bin'
+        private_key_path = 'private_key.pem'
 
         sign_firmware.sign_firmware(private_key_path, bin_path, signed_path)
 
@@ -165,7 +186,11 @@ def send_firmware(ser):
             sys.exit(1)
 
 if __name__ == "__main__":
-    keygen.keygen # run again before reconnecting power to mcu after power loss 
+    args = parse_args()
+
+    PORT = args.port
+    BAUDRATE = args.baudrate
+
     while True:
         try:
             ser = serial.Serial(PORT, BAUDRATE, timeout=0.2)

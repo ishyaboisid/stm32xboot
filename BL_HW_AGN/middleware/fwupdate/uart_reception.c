@@ -5,7 +5,7 @@
 
 #include "uart_reception.h"
 #include "platform.h"
-#include "verify.h"
+#include "crypto/verify.h"
 #include "metadata.h"
 #include "crypto/aes_ctr.h"
 #include "aes/inc/aes.h"

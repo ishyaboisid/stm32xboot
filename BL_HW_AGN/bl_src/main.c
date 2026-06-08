@@ -20,7 +20,7 @@ uint8_t AUTOMATIC_UPDATE = 0;
 #if BL_LOG_LEVEL == BL_LOG_PRINTF
 int uart_putchar(int c)
 {
-  PAL_UART_Transmit((uint8_t *)&c, 1, HAL_MAX_DELAY);
+  PAL_UART_Transmit((uint8_t *)&c, 1, PAL_MAX_DELAY);
   return c;
 }
 #endif
@@ -39,16 +39,12 @@ void update_image_state(Metadata *m) {
     meta.image_state = IMG_STATE_TRIAL;
     // reset bootcount in Metadata_UpdateAfterRecieve
     Metadata_Save(&meta);
-  }
-
-  if (meta.image_state == IMG_STATE_TRIAL) {
+  } else if (meta.image_state == IMG_STATE_TRIAL) {
     Metadata_IncrementBootCount(&meta); // increment before jumping
     if (Rollback_Check(&meta)) {
       BL_LOG("Bootcount exceeded. Rolling back to previous version.");
     }
-  }
-
-  if (meta.image_state == IMG_STATE_HEALTHY) {
+  } else if (meta.image_state == IMG_STATE_HEALTHY) {
     if (iwdg_reset) { // app failed to pet
       meta.runtime_fault_count++; // 10 resets allowed
       Metadata_Save(&meta);
@@ -57,6 +53,13 @@ void update_image_state(Metadata *m) {
     if (Rollback_Check(&meta)) {
       BL_LOG("Runtime faults exceeded. Rolling back to previous version.");
     }
+  } else if (meta.image_state == IMG_STATE_REVERTED) { /* @todo verify but cannot until IWDG is verified*/
+    // old slot is now running — treat it as healthy, reset fault counters
+    meta.image_state = IMG_STATE_HEALTHY;
+    meta.bootcount = 0;
+    meta.runtime_fault_count = 0;
+    Metadata_Save(&meta);
+    BL_LOG("Running reverted slot — marked healthy\r\n");
   }
 }
 
@@ -107,40 +110,69 @@ void Task_BL_BlinkLED(void) {
 }
 
 /** @todo TEST IWDG AND COMMIT */
+// static void goto_application(Metadata *meta) {
+//   if (meta->SLOTA_LATEST) {
+//     if ((*(volatile uint32_t *)SLOTA_START_ADDRESS) == 0xFFFFFFFF) {
+//       BL_LOG("No app found, staying in bootloader...\r\n");
+//       return;
+//     } else {
+//       BL_LOG("Jumping to application...\r\n");
+//       PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//       void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTA_START_ADDRESS + 4U));
+//       SCB->VTOR = SLOTA_START_ADDRESS;
+//       __set_MSP(*(volatile uint32_t *)SLOTA_START_ADDRESS); // used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
+//       // #ifdef DEBUG
+//       // PAL_FREEZE_IWDG();  // don't let breakpoints trigger resets
+//       // #endif
+//       // PAL_MX_IWDG_Init();
+//       app_reset_handler(); // call function pointer 
+//     }
+//   } else {
+//     if ((*(volatile uint32_t *)SLOTB_START_ADDRESS) == 0xFFFFFFFF) {
+//       BL_LOG("No app found, staying in bootloader...\r\n");
+//       return;
+//     } else {
+//       BL_LOG("Jumping to application...\r\n");
+//       PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//       void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTB_START_ADDRESS + 4U));
+//       SCB->VTOR = SLOTB_START_ADDRESS;
+//       __set_MSP(*(volatile uint32_t *)SLOTB_START_ADDRESS); 
+//       // #ifdef DEBUG
+//       // PAL_FREEZE_IWDG();
+//       // #endif
+//       // PAL_MX_IWDG_Init(); 
+//       app_reset_handler();
+//     }  
+//   }
+// }
+
+/** @todo test goto_application function */
 static void goto_application(Metadata *meta) {
-  if (meta->SLOTA_LATEST) {
-    if ((*(volatile uint32_t *)SLOTA_START_ADDRESS) == 0xFFFFFFFF) {
-      BL_LOG("No app found, staying in bootloader...\r\n");
-      return;
-    } else {
-      BL_LOG("Jumping to application...\r\n");
-      PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-      void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTA_START_ADDRESS + 4U));
-      SCB->VTOR = SLOTA_START_ADDRESS;
-      __set_MSP(*(volatile uint32_t *)SLOTA_START_ADDRESS); // used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
-      // #ifdef DEBUG
-      // PAL_FREEZE_IWDG();  // don't let breakpoints trigger resets
-      // #endif
-      // PAL_MX_IWDG_Init();
-      app_reset_handler(); // call function pointer 
-    }
+  uint32_t boot_addr = meta->SLOTA_LATEST ? SLOTA_START_ADDRESS : SLOTB_START_ADDRESS; 
+  if ((*(volatile uint32_t *)boot_addr) == 0xFFFFFFFF) {
+    BL_LOG("No app found, staying in bootloader...\r\n");
+    return;
   } else {
-    if ((*(volatile uint32_t *)SLOTB_START_ADDRESS) == 0xFFFFFFFF) {
-      BL_LOG("No app found, staying in bootloader...\r\n");
-      return;
-    } else {
-      BL_LOG("Jumping to application...\r\n");
-      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-      void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (SLOTB_START_ADDRESS + 4U));
-      SCB->VTOR = SLOTB_START_ADDRESS;
-      __set_MSP(*(volatile uint32_t *)SLOTB_START_ADDRESS); 
-      // #ifdef DEBUG
-      // PAL_FREEZE_IWDG();
-      // #endif
-      // PAL_MX_IWDG_Init(); 
-      app_reset_handler();
-    }  
-  }
+    BL_LOG("Jumping to application...\r\n");
+    PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+    void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (boot_addr + 4U));
+    /** @todo implement PAL functions needed before jumping to app */
+    /*
+    HAL_DeInit();        // de-init peripherals + mask SysTick IRQ
+    SysTick->CTRL = 0;  // fully stop the counter itself
+    __disable_irq(); // EXTI interrupt enabled (blue button, EXTI15_10_IRQn). If fired during/after jump, before app sets up SCB->VTOR, will call the bootloader's ISR handler — which no longer has a valid stack context
+    */
+    SCB->VTOR = boot_addr;
+    __set_MSP(*(volatile uint32_t *)boot_addr); // used by CPU for exception handlers, HardFaults, SysTick, UART interrupts, any ISR. psp = application thread code
+    /** @todo TEST IWDG AND COMMIT */
+    /*
+    #ifdef DEBUG
+    PAL_FREEZE_IWDG();  // don't let breakpoints trigger resets
+    #endif
+    PAL_MX_IWDG_Init();
+    */
+    app_reset_handler(); // call function pointer 
+  } 
 }
 
 /* User button nucleo f103rb:
