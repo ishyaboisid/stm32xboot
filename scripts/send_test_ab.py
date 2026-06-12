@@ -150,6 +150,7 @@ def send_firmware(ser):
         ser.write(struct.pack("<I", len(data)))
         expect_ack(ser, "size")
 
+        print(f"Sending IV...")
         ser.write(iv)
         expect_ack(ser, "IV")
 

@@ -88,12 +88,12 @@ in order of priority:
 
 ## Architecture
 
-STMBoot separates concerns into four distinct layers. Middleware and application logic never include HAL headers directly and all hardware access goes through the Platform Abstraction Layer (PAL). Adding support for a new STM32 family requires only a new `platform/stm32/<family>/` folder and a new board entry in CMake.
+STMBoot separates concerns into four distinct layers. bootutil and application logic never include HAL headers directly and all hardware access goes through the Platform Abstraction Layer (PAL). Adding support for a new STM32 family requires only a new `platform/stm32/<family>/` folder and a new board entry in CMake.
 
 ```
 stmboot/
 ┌─────────────────────────────────────────────────┐
-│                  bl_src/                        │
+│                  boot/                          │
 │   main.c — Rollback, update image state,        │
 │   check for updates, jump to application        │
 │   logging.h - no logging, uart logging,         │
@@ -104,7 +104,7 @@ stmboot/
 │              & drivers for boards               │
 |   gcc-arm-none-eabi.cmake                       |
 ├─────────────────────────────────────────────────┤
-│           middleware/ (PAL calls only)          │
+│           bootutil/ (PAL calls only)          │
 │        crypto/          │       fwupdate/       │
 | aes_ctr - has AES key   │    metadata.c         │
 | ECDSA P-256 public key  │    uart_reception.c   │
@@ -135,7 +135,7 @@ cmake -B build -DBOARD=g474re  # when G4 support is added
 cmake -B build -DBOARD=h743zi  # when H7 support is added
 ```
 
-Each board file (`cmake/boards/f103rb.cmake`) defines sources, includes, defines, and the linker script. `app/` and `middleware/` are identical across all boards.
+Each board file (`cmake/boards/f103rb.cmake`) defines sources, includes, defines, and the linker script. `app/` and `bootutil/` are identical across all boards.
 
 ---
 
@@ -270,7 +270,7 @@ MCU side (after decryption):
 - Curve: SECP256R1 (P-256)
 - Hash: SHA-256
 - Signature format: raw 64 bytes (32 r + 32 s, big-endian)
-- Public key: baked into bootloader flash as `middleware/crypto/public_key.h`
+- Public key: baked into bootloader flash as `bootutil/crypto/public_key.h`
 - Library: [micro-ecc](https://github.com/kmackay/micro-ecc) (~2KB flash)
 
 ### AES-128 CTR Encryption

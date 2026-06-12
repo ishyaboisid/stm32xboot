@@ -23,14 +23,6 @@ static struct AES_ctx ctx; // context
 
 static void send_ack(void) { PAL_UART_Transmit((uint8_t *)"ACK\r\n", 5, 100); }
 static void send_nack(void) { PAL_UART_Transmit((uint8_t *)"NACK\r\n", 6, 100); }
-static void send_resume_offset(uint32_t bytes_written) { 
-    PAL_UART_Transmit((uint8_t *)bytes_written, sizeof(bytes_written), 100);
-}
-
-void Slot_UpdateProgress(Metadata *m, uint32_t bytes_written) {
-    m->bytes_written = bytes_written;
-    Metadata_Save(m);
-}
 
 RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     uint8_t size_buf[4];
@@ -49,38 +41,45 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     
     uint32_t write_addr;
     if (meta->SLOTA_LATEST) {
+        meta->write_state = WRITE_STATE_ERASING;
+        Metadata_Save(meta);
         if (PAL_Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
         write_addr = SLOTB_START_ADDRESS;
         PAL_UART_Transmit((uint8_t *)"B\r\n", 3, 100); 
         // meta->SLOTA_LATEST = 0;
     } else {
+        meta->write_state = WRITE_STATE_ERASING;
+        Metadata_Save(meta);
         if (PAL_Flash_EraseSlot(SLOTA_START_ADDRESS, SLOT_NUM_PAGES) != FLASH_OK) return RECEP_ERR_RECV;
         write_addr = SLOTA_START_ADDRESS; 
         PAL_UART_Transmit((uint8_t *)"A\r\n", 3, 100);
         // meta->SLOTA_LATEST = 1;
     }
+    meta->write_state = WRITE_STATE_IDLE;
+    Metadata_Save(meta); 
     send_ack(); // for 0xAA and 0xBB, fw version approv and after deciding slot to prog
 
     PAL_UARTEx_Receive_DMA(size_buf, sizeof(size_buf));
     uint32_t total_len = (uint32_t)size_buf[0] | (uint32_t)size_buf[1] << 8 | (uint32_t)size_buf[2] << 16 | (uint32_t)size_buf[3] << 24;
     if (total_len == 0 || total_len > (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)) { send_nack(); return RECEP_ERR_SIZE; }
 
-    PAL_CRC_Reset(); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
     static uint8_t chunk[UART_RECEP_CHUNK_SIZE]; // static so it doesn't live on stack
     uint32_t remaining_data = total_len; 
-    meta->fw_size = total_len; 
-    Metadata_Save(meta);
     send_ack(); // for size ok
     
     uint8_t iv[16];
     PAL_UARTEx_Receive_DMA(meta->iv, sizeof(iv));
     Metadata_Save(meta);
-    send_ack(); // for IV recieved
-
+    
     AES_init_ctx_iv(&ctx, AES_KEY, meta->iv); // converts 16 byte key into 11 round keys of 16 bytes each
 
     int chunk_count; 
 
+    meta->write_state  = WRITE_STATE_WRITING;
+    Metadata_Save(meta);
+
+    send_ack(); // for IV recieved
+    PAL_CRC_Reset(); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < UART_RECEP_CHUNK_SIZE ? remaining_data : UART_RECEP_CHUNK_SIZE;
         if (PAL_UARTEx_Receive_DMA(chunk, chunk_len) != PAL_OK) {
@@ -95,15 +94,18 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
         if (PAL_Flash_Write(write_addr, chunk, chunk_len) != FLASH_OK) return RECEP_ERR_RECV;
         write_addr += chunk_len;
         remaining_data -= chunk_len;
-        chunk_count++;
-        Slot_UpdateProgress(meta, chunk_count * UART_RECEP_CHUNK_SIZE);
+        // chunk_count++;
+        // Slot_UpdateProgress(meta, chunk_count * UART_RECEP_CHUNK_SIZE);
         send_ack();
     }
-    send_ack(); // for data as a whole
 
     uint32_t calculated_crc = PAL_CRC_GetResult();
 
+    meta->write_state  = WRITE_STATE_COMPLETE;
+    Metadata_Save(meta);
+
     uint8_t crc_buf[4];
+    send_ack(); // for data as a whole
     if (PAL_UART_Receive(crc_buf, 4, BYTE_TIMEOUT_MS) != PAL_OK) {
             send_nack();
             return RECEP_ERR_RECV;
@@ -120,10 +122,13 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     }
     if (!Verify_Firmware((uint8_t *)which_slot_addr, total_len - 64U, signature)) {
         send_nack();
-        PAL_Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES);
+        meta->write_state = WRITE_STATE_ERASING;
+        Metadata_Save(meta);
+        if(PAL_Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES)) return RECEP_ERR_RECV;
         return RECEP_ERR_SIG; 
     }
-
+    meta->write_state  = WRITE_STATE_IDLE;
+    Metadata_Save(meta);
     // meta->FW_VER_MAJOR = incoming_fwv_major; // done by app after confirmed healthy
     // meta->FW_VER_MINOR = incoming_fwv_minor;
     send_ack(); 

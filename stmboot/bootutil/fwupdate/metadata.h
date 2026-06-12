@@ -7,10 +7,18 @@
 #include "board_config.h"
 
 #define METADATA_MAGIC 0xDEADBEEFU // start of metadata
+#define METADATA_SLOT_SIZE 0x1000 // 4kb
 
 // rollback
 #define BOOT_COUNT_MAX 3U 
 #define RUNTIME_BOOT_COUNT_MAX 10U
+
+typedef enum {
+    WRITE_STATE_IDLE = 0x0, // no writing in prog
+    WRITE_STATE_ERASING = 0x1, // erase started not completed
+    WRITE_STATE_WRITING = 0x2, // write started not completed
+    WRITE_STATE_COMPLETE = 0x3, // all bytes written
+} WriteState;
 
 typedef enum {
     IMG_STATE_NONE = 0x0, // no fw erased flash
@@ -30,9 +38,9 @@ typedef struct __attribute__((packed)) {
     uint32_t image_state;
     uint32_t runtime_fault_count;
     uint32_t sequence; // monotonically increasing — higher = newer
-    uint32_t bytes_written;
-    uint32_t fw_size;
     uint8_t iv[16];
+    uint32_t write_state;
+    uint32_t crc; 
 } Metadata;
 
 // _Static_assert(sizeof(Metadata) == 16, "Metadata struct size not 16b"); // todo is failing

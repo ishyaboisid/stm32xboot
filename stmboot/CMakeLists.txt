@@ -17,13 +17,13 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 add_compile_options(${BOARD_CPU_FLAGS})
 add_link_options(${BOARD_CPU_FLAGS})
 
-# ── app and middleware sources ────────────────────────────────────
+# ── boot and bootutil sources ────────────────────────────────────
 set(APP_SOURCES
-    bl_src/main.c
-    middleware/fwupdate/uart_reception.c
-    middleware/fwupdate/metadata.c
-    middleware/crypto/verify.c
-    middleware/crypto/aes_ctr.c
+    boot/main.c
+    bootutil/fwupdate/uart_reception.c
+    bootutil/fwupdate/metadata.c
+    bootutil/crypto/verify.c
+    bootutil/crypto/aes_ctr.c
     third_party/printf-stdarg.c
     third_party/aes/src/aes.c
     third_party/sha256/src/sha256.c
@@ -31,9 +31,9 @@ set(APP_SOURCES
 )
 
 set(APP_INCLUDES
-    bl_src
-    middleware
-    middleware/crypto
+    boot
+    bootutil
+    bootutil/crypto
     platform
     platform/pal
     third_party/
@@ -62,6 +62,7 @@ target_compile_definitions(Bootloader PRIVATE
     uECC_SUPPORTS_secp224r1=0
     uECC_SUPPORTS_secp192r1=0
     uECC_SUPPORTS_secp160r1=0
+    uECC_OPTIMIZATION_LEVEL=0
     uECC_SUPPORT_COMPRESSED_POINT=0
     AES128=1
     CTR=1
@@ -75,6 +76,14 @@ target_compile_options(Bootloader PRIVATE
     -ffunction-sections
     $<$<CONFIG:Debug>:-Og -g3>
     $<$<CONFIG:Release>:-Os>
+)
+
+target_compile_options(Bootloader PRIVATE
+    $<$<CONFIG:Release>:-flto>
+)
+
+target_link_options(Bootloader PRIVATE
+    $<$<CONFIG:Release>:-s -flto>
 )
 
 target_link_options(Bootloader PRIVATE

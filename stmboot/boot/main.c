@@ -12,8 +12,7 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart2_tx;
 
-uint8_t header_buf[4]; // header buf contains 0xAA and 0xBB no size (6b->2b) added version in header 2b+2b=4b
-// bool SLOTA_LATEST = true; // true = slot a contains latest firmware // false = slot b contains latest firmware
+uint8_t header_buf[4]; // header buf contains 0xAA and 0xBB and version 2b+2b=4b
 
 const uint8_t BL_Version[2] = { BL_VERSION_MAJOR, BL_VERSION_MINOR };
 uint8_t AUTOMATIC_UPDATE = 0;
@@ -63,33 +62,37 @@ void update_image_state(Metadata *m) {
   }
 }
 
+void check_prev_write(Metadata *m) {
+  if (meta.write_state == WRITE_STATE_IDLE) {
+    AUTOMATIC_UPDATE = 0; 
+    return;
+  }
+
+  uint32_t slot_addr = meta.SLOTA_LATEST ? SLOTB_START_ADDRESS : SLOTA_START_ADDRESS;
+  if (meta.write_state == WRITE_STATE_ERASING || meta.write_state == WRITE_STATE_WRITING) {
+    meta.write_state = WRITE_STATE_ERASING;
+    Metadata_Save(&meta);
+    PAL_Flash_EraseSlot(slot_addr, SLOT_NUM_PAGES);
+  }
+
+  meta.write_state = WRITE_STATE_IDLE;
+  AUTOMATIC_UPDATE = 1;
+  Metadata_Save(&meta);
+}
+
 int main(void)
 {
   System_Init();
   
   Metadata_Load(&meta);
 
-  uint32_t power_loss_reset = (meta.bytes_written > 0) && (meta.bytes_written < meta.fw_size) && (meta.fw_size > 0);
+  check_prev_write(&meta);
 
   Task_BL_SetLED();
 
   BL_LOG("Starting bootloader (0.1)\r\n");
 
   update_image_state(&meta);
-
-  if (power_loss_reset) {
-      if (meta.SLOTA_LATEST) {
-        PAL_Flash_EraseSlot(SLOTB_START_ADDRESS, SLOT_NUM_PAGES);
-      } else {
-        PAL_Flash_EraseSlot(SLOTA_START_ADDRESS, SLOT_NUM_PAGES); 
-      }
-      AUTOMATIC_UPDATE = 1;
-          // clear progress so this doesn't trigger again next boot
-    meta.bytes_written = 0;
-    meta.fw_size       = 0;
-    Metadata_Save(&meta);
-    BL_LOG("Slot erased — waiting for retransmit\r\n");
-  }
 
   check_for_update(&meta, AUTOMATIC_UPDATE);
   
@@ -110,7 +113,7 @@ void Task_BL_BlinkLED(void) {
 }
 
 static void goto_application(Metadata *meta) {
-  uint32_t boot_addr = meta->SLOTA_LATEST ? SLOTA_START_ADDRESS : SLOTB_START_ADDRESS; 
+  uint32_t boot_addr = meta->SLOTA_LATEST ? SLOTA_START_ADDRESS : SLOTB_START_ADDRESS; // true = slot a contains latest firmware // false = slot b contains latest firmware
   if ((*(volatile uint32_t *)boot_addr) == 0xFFFFFFFF) {
     BL_LOG("No app found, staying in bootloader...\r\n");
     return;
@@ -156,6 +159,7 @@ static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
     }
   } while (1);
   if (Update_Pin_State == GPIO_PIN_RESET || AUTOMATIC_UPDATE /*|| DBG_FORCE_UPDATE*/) {
+    if (AUTOMATIC_UPDATE) BL_LOG("Interrupted update detected!\r\n");
     BL_LOG("Starting Firmware Download!\r\n");
     PAL_UART_Transmit((uint8_t *)"READY\r\n", 7, 100);
     PAL_UARTEx_Receive_DMA(header_buf, sizeof(header_buf));
