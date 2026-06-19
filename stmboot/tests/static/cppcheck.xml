@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+    <cppcheck version="2.21.0"/>
+    <errors>
+        <error id="normalCheckLevelMaxBranches" severity="information" msg="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." verbose="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="0" column="0"/>
+        </error>
+        <error id="shadowVariable" severity="style" msg="Argument &apos;meta&apos; shadows outer variable" verbose="Argument &apos;meta&apos; shadows outer variable" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="115" column="40" info="Shadow argument"/>
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="2" column="10" info="Shadowed variable"/>
+            <symbol>meta</symbol>
+        </error>
+        <error id="shadowVariable" severity="style" msg="Argument &apos;meta&apos; shadows outer variable" verbose="Argument &apos;meta&apos; shadows outer variable" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="147" column="40" info="Shadow argument"/>
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="2" column="10" info="Shadowed variable"/>
+            <symbol>meta</symbol>
+        </error>
+        <error id="shadowVariable" severity="style" msg="Argument &apos;AUTOMATIC_UPDATE&apos; shadows outer variable" verbose="Argument &apos;AUTOMATIC_UPDATE&apos; shadows outer variable" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="147" column="54" info="Shadow argument"/>
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="18" column="9" info="Shadowed variable"/>
+            <symbol>AUTOMATIC_UPDATE</symbol>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/crypto/aes_ctr.h" line="4" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/crypto/aes_ctr.h" line="5" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;string.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;string.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/crypto/aes_ctr.c" line="3" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/crypto/verify.h" line="4" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/crypto/verify.h" line="5" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.h" line="4" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdbool.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdbool.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.h" line="5" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="2" column="2"/>
+        </error>
+        <error id="normalCheckLevelMaxBranches" severity="information" msg="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." verbose="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="0" column="0"/>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;stored1&apos; can be declared as pointer to const" verbose="Variable &apos;stored1&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="11" column="15" info="Variable &apos;stored1&apos; can be declared as pointer to const"/>
+            <symbol>stored1</symbol>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;stored2&apos; can be declared as pointer to const" verbose="Variable &apos;stored2&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="12" column="15" info="Variable &apos;stored2&apos; can be declared as pointer to const"/>
+            <symbol>stored2</symbol>
+        </error>
+        <error id="constParameterPointer" severity="style" msg="Parameter &apos;m&apos; can be declared as pointer to const" verbose="Parameter &apos;m&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="56" column="49" info="Parameter &apos;m&apos; can be declared as pointer to const"/>
+            <symbol>m</symbol>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;stored&apos; can be declared as pointer to const" verbose="Variable &apos;stored&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="75" column="15" info="Variable &apos;stored&apos; can be declared as pointer to const"/>
+            <symbol>stored</symbol>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;stored&apos; can be declared as pointer to const" verbose="Variable &apos;stored&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/metadata.c" line="85" column="14" info="Variable &apos;stored&apos; can be declared as pointer to const"/>
+            <symbol>stored</symbol>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdint.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.h" line="8" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stddef.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.h" line="9" column="2"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file: &lt;stdbool.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results." verbose="Include file: &lt;stdbool.h&gt; not found. Please note: Standard library headers do not need to be provided to get proper results.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.h" line="10" column="2"/>
+        </error>
+        <error id="normalCheckLevelMaxBranches" severity="information" msg="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." verbose="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c" line="0" column="0"/>
+        </error>
+        <error id="constParameterPointer" severity="style" msg="Parameter &apos;received_header&apos; can be declared as pointer to const" verbose="Parameter &apos;received_header&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c" line="27" column="36" info="Parameter &apos;received_header&apos; can be declared as pointer to const"/>
+            <symbol>received_header</symbol>
+        </error>
+        <error id="unusedVariable" severity="style" msg="Unused variable: chunk_count" verbose="Unused variable: chunk_count" cwe="563" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/fwupdate/uart_reception.c" line="76" column="9"/>
+            <symbol>chunk_count</symbol>
+        </error>
+        <error id="constParameterPointer" severity="style" msg="Parameter &apos;file&apos; can be declared as pointer to const" verbose="Parameter &apos;file&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/system_init.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/system_init.c" line="211" column="29" info="Parameter &apos;file&apos; can be declared as pointer to const"/>
+            <symbol>file</symbol>
+        </error>
+        <error id="constParameterPointer" severity="style" msg="Parameter &apos;data&apos; can be declared as pointer to const" verbose="Parameter &apos;data&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/pal/pal_crc.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/pal/pal_crc.c" line="12" column="38" info="Parameter &apos;data&apos; can be declared as pointer to const"/>
+            <symbol>data</symbol>
+        </error>
+        <error id="constParameterPointer" severity="style" msg="Parameter &apos;huart&apos; can be declared as pointer to const" verbose="Parameter &apos;huart&apos; can be declared as pointer to const" cwe="398" file0="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/pal/pal_uart.c">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/pal/pal_uart.c" line="39" column="53" info="Parameter &apos;huart&apos; can be declared as pointer to const"/>
+            <symbol>huart</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;Rollback_Check&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;Rollback_Check&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="27" column="5"/>
+            <symbol>Rollback_Check</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;update_image_state&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;update_image_state&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="36" column="6"/>
+            <symbol>update_image_state</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;check_prev_write&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;check_prev_write&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="65" column="6"/>
+            <symbol>check_prev_write</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;Task_BL_SetLED&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;Task_BL_SetLED&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="104" column="6"/>
+            <symbol>Task_BL_SetLED</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;Task_BL_BlinkLED&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;Task_BL_BlinkLED&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/boot/main.c" line="108" column="6"/>
+            <symbol>Task_BL_BlinkLED</symbol>
+        </error>
+        <error id="staticFunction" severity="style" msg="The function &apos;SystemClock_Config&apos; should have static linkage since it is not used outside of its translation unit." verbose="The function &apos;SystemClock_Config&apos; should have static linkage since it is not used outside of its translation unit.">
+            <location file="/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform/stm32/f1/system_init.c" line="32" column="6"/>
+            <symbol>SystemClock_Config</symbol>
+        </error>
+        <error id="checkersReport" severity="information" msg="Active checkers: 119/186 (use --checkers-report=&lt;filename&gt; to see details)" verbose="Active checkers: 119/186 (use --checkers-report=&lt;filename&gt; to see details)"/>
+    </errors>
+</results>

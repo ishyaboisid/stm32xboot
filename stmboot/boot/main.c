@@ -1,4 +1,5 @@
- #include "main.h"
+// screen /dev/tty.usbmodem103 115200 
+#include "main.h"
 Metadata meta;
 
 extern uint32_t iwdg_reset;
@@ -62,22 +63,66 @@ void update_image_state(Metadata *m) {
   }
 }
 
-void check_prev_write(Metadata *m) {
-  if (meta.write_state == WRITE_STATE_IDLE) {
+void check_interrupted_write(Metadata *m) {
+  uint32_t slot_addr = meta.SLOTA_LATEST ? SLOTB_START_ADDRESS : SLOTA_START_ADDRESS;
+
+  if (meta.bl_state == BL_STATE_IDLE && meta.fwu_state == FWU_STATE_IDLE) { // normal boot
+    BL_LOG("No interrupted writes!\r\n");
     AUTOMATIC_UPDATE = 0; 
     return;
   }
 
-  uint32_t slot_addr = meta.SLOTA_LATEST ? SLOTB_START_ADDRESS : SLOTA_START_ADDRESS;
-  if (meta.write_state == WRITE_STATE_ERASING || meta.write_state == WRITE_STATE_WRITING) {
-    meta.write_state = WRITE_STATE_ERASING;
+  if (meta.bl_state == BL_STATE_ERASING || meta.bl_state == BL_STATE_WRITING) { // power lost during erase or write
+    meta.bl_state = BL_STATE_ERASING;
     Metadata_Save(&meta);
     PAL_Flash_EraseSlot(slot_addr, SLOT_NUM_PAGES);
+    meta.bl_state = BL_STATE_IDLE;
+    meta.fwu_state = FWU_STATE_IDLE;
+    Metadata_Save(&meta);
+    AUTOMATIC_UPDATE = 1;
+    return;
   }
 
-  meta.write_state = WRITE_STATE_IDLE;
-  AUTOMATIC_UPDATE = 1;
-  Metadata_Save(&meta);
+  // bl state idle but fwu state mid protocol
+  switch(meta.fwu_state) {
+    case FWU_STATE_START: // do nothing
+      BL_LOG("FWU Interrupted @ state START - retrying...\r\n");
+      meta.fwu_state = FWU_STATE_IDLE;
+      AUTOMATIC_UPDATE = 1; 
+      break;
+    case FWU_STATE_ERASEDSLOT: // slot erase but no fw written, fall through and do same as FWU_STATE_WRITECOMPLETE
+    case FWU_STATE_WRITECOMPLETE: // chunks written but no crc so integretiy is not confirmed
+      BL_LOG("FWU Interrupted @ state ERASEDSLOT or WRITECOMPLETE - retrying...\r\n");
+      PAL_Flash_EraseSlot(slot_addr, SLOT_NUM_PAGES);
+      meta.fwu_state = FWU_STATE_IDLE;
+      Metadata_Save(&meta);
+      AUTOMATIC_UPDATE = 1;
+      break; 
+    case FWU_STATE_CRCVERIFIED: // integrity good, check authenticity
+      BL_LOG("FWU Interrupted @ state CRCVERIFIED - checking authenticity...\r\n");
+      if (Reverify_Signature(m, slot_addr)) {
+        meta.fwu_state = FWU_STATE_ECCVERIFIED;
+        Metadata_Save(&meta);
+        Metadata_UpdateAfterRecieve(&meta, meta.SLOTA_LATEST);
+      } else {
+        PAL_Flash_EraseSlot(slot_addr, SLOT_NUM_PAGES);
+        meta.fwu_state = FWU_STATE_IDLE;
+        Metadata_Save(&meta);
+        AUTOMATIC_UPDATE = 1;
+      }
+      break;
+    case FWU_STATE_ECCVERIFIED: // image trustworthy, just commit
+      BL_LOG("FWU Interrupted @ state ECCVERIFIED - committing to slot...\r\n");
+      Metadata_UpdateAfterRecieve(&meta, meta.SLOTA_LATEST); // todo possibly rename the function
+      break;
+    default: 
+      BL_LOG("FWU Interrupted - retrying...\r\n");
+      PAL_Flash_EraseSlot(slot_addr, SLOT_NUM_PAGES);
+      meta.fwu_state = FWU_STATE_IDLE;
+      Metadata_Save(&meta);
+      AUTOMATIC_UPDATE = 1;
+      break;
+  }
 }
 
 int main(void)
@@ -86,13 +131,13 @@ int main(void)
   
   Metadata_Load(&meta);
 
-  check_prev_write(&meta);
-
   Task_BL_SetLED();
 
   BL_LOG("Starting bootloader (0.1)\r\n");
 
   update_image_state(&meta);
+
+  check_interrupted_write(&meta);
 
   check_for_update(&meta, AUTOMATIC_UPDATE);
   
@@ -149,7 +194,7 @@ static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
   PAL_GPIO_PinState Update_Pin_State;
   uint32_t end_tick = PAL_GetTick() + 5000; // 5 seconds from now
 
-  BL_LOG("Press the User Button B1 PC13 to trigger UART update...\r\n");
+  BL_LOG("Press the User Button B1 PC13 to trigger UART update...\r\n"); // todo make this conditional if AUTOMATIC_UPDATE = 1;
   do {
     Update_Pin_State = PAL_GPIO_ReadPin( B1_GPIO_Port, B1_Pin ); 
     uint32_t current_tick = PAL_GetTick(); 
@@ -159,7 +204,10 @@ static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
     }
   } while (1);
   if (Update_Pin_State == GPIO_PIN_RESET || AUTOMATIC_UPDATE /*|| DBG_FORCE_UPDATE*/) {
-    if (AUTOMATIC_UPDATE) BL_LOG("Interrupted update detected!\r\n");
+    if (AUTOMATIC_UPDATE) {
+      BL_LOG("Interrupted update detected!\r\n");
+      if (meta->fwu_state == FWU_STATE_CRCVERIFIED) BL_LOG("power lost after crcverified!\r\n");
+    }
     BL_LOG("Starting Firmware Download!\r\n");
     PAL_UART_Transmit((uint8_t *)"READY\r\n", 7, 100);
     PAL_UARTEx_Receive_DMA(header_buf, sizeof(header_buf));

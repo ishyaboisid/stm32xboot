@@ -42,6 +42,15 @@ set(APP_INCLUDES
     third_party/uECC
 )
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
+
+# ── static analysis — host build, no ARM toolchain ───────────────────────
+# Only included when STATIC_ANALYSIS=ON, set by the preset
+if(STATIC_ANALYSIS)
+    message(STATUS "Static analysis mode — no firmware target built")
+    include(tests/CMakeLists.txt)
+    return()  # skip all firmware targets below this point
+endif()
+
 # ── target ───────────────────────────────────────────────────────
 add_executable(Bootloader
     ${BOARD_SOURCES}

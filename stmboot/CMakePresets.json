@@ -72,6 +72,17 @@
                 "BOARD": "h743zi",
                 "BL_LOG_LEVEL": "1"
             }
+        },
+        {
+            "name": "static-analysis",
+            "displayName": "Static Analysis",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/static-analysis",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "STATIC_ANALYSIS": "ON",
+                "BOARD": "f103rb"
+            }
         }
     ],
     "buildPresets": [
@@ -98,6 +109,11 @@
         {
             "name": "h743zi-release",
             "configurePreset": "h743zi-release"
-        }
+        },
+            {
+            "name": "static-analysis-all",
+            "configurePreset": "static-analysis",
+            "targets": ["static-analysis"]
+            }
     ]
 }

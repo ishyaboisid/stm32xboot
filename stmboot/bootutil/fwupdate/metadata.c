@@ -47,6 +47,9 @@ PAL_Flash_StatusTypeDef Metadata_Load(Metadata *m) {
         m->FW_VER_MAJOR = 0x0;
         m->FW_VER_MINOR = 0x0;
         m->image_state = IMG_STATE_NONE;
+        m->bl_state = BL_STATE_IDLE;
+        m->fwu_state = FWU_STATE_IDLE;
+        m->fw_size = 0;
         m->sequence = 1;
         m->crc = compute_metadata_crc(m);
         return Metadata_Save(m);
@@ -54,9 +57,12 @@ PAL_Flash_StatusTypeDef Metadata_Load(Metadata *m) {
 }
 
 PAL_Flash_StatusTypeDef Metadata_Save(Metadata *m) {
-    uintptr_t target = return_Inactive_Metadata_Address(); 
+    uintptr_t target = return_Inactive_Metadata_Address();
+    uintptr_t active_addr = return_Active_Metadata_Address(); 
+    Metadata *active = (const Metadata *)active_addr;
     Metadata temp = *m;
-    temp.sequence++;
+    
+    temp.sequence = active->sequence + 1;
     temp.crc = compute_metadata_crc(&temp);
 
     if(PAL_Flash_ErasePage(target) != FLASH_OK) {
@@ -88,6 +94,7 @@ PAL_Flash_StatusTypeDef Metadata_UpdateAfterRecieve(Metadata *m, bool SLOTA_LATE
         m->SLOTA_LATEST = SLOTA_LATEST ? 0 : 1; 
         m->bootcount = 0;
         m->image_state = IMG_STATE_PENDING; // not confirmed, will be confirmed by app
+        m->fwu_state    = FWU_STATE_IDLE;
         return Metadata_Save(m);
     }
     return FLASH_ERR_INVALID_ADDR;

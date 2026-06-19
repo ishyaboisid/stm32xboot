@@ -1,5 +1,5 @@
 #pragma once
-#include "stm32f1xx_hal.h"
+#include "platform.h"
 
 #ifndef BL_LOG_LEVEL
 #define BL_LOG_LEVEL BL_LOG_UART
@@ -12,8 +12,8 @@
 #if BL_LOG_LEVEL == BL_LOG_NONE
 #define BL_LOG(...) ((void)0);
 #elif BL_LOG_LEVEL == BL_LOG_UART
-extern UART_HandleTypeDef huart2;
-#define BL_LOG(msg) HAL_UART_Transmit(&huart2, (uint8_t *)(msg), sizeof(msg) - 1, 100)
+// extern UART_HandleTypeDef huart2;
+#define BL_LOG(msg) PAL_UART_Transmit((uint8_t *)(msg), sizeof(msg) - 1, 100)
 #elif BL_LOG_LEVEL == BL_LOG_PRINTF
 int uart_putchar(int c);
 #define BL_LOG(...) printf(__VA_ARGS__) // uses printf-stdarg.c for printf

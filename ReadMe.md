@@ -1,4 +1,4 @@
-# stmboot — Secure Bootloader for STM32
+# stmboot: an attempt at a secure bootloader for STM32 MCUs
 
 A lightweight, hardware-agnostic secure bootloader for STM32 microcontrollers featuring dual-slot A/B firmware updates, cryptographic verification, AES-128 encryption.
 
@@ -39,6 +39,7 @@ In addition, these heavy duty BLs typically take a little over 32 kB of flash me
   - [Deterministic Metadata Image State Machine](#deterministic-metadata-image-state-state-machine)
 - [Logging](#logging)
 - [Bootloader Flow](#bootloader-flow)
+- [Testing](#testing)
 - [Third-Party Libraries](#third-party-libraries)
 ---
 
@@ -291,47 +292,52 @@ Padding:     data padded to 4-byte boundary with 0xFF
 
 ### Power Loss Resistance
 Three primary cases exist:
-1. Window 1 (power during erase):
-  IDLE → ERASING → [power lost]
-    On next boot: detect ERASING → re-erase → reset to IDLE → RESUME_RESTART
-1. Window 2 (power during write):
-  ERASING → IN_PROGRESS → [power lost at chunk N]
-    On next boot: detect IN_PROGRESS → re-erase → reset to IDLE → send RESUME_RESTART
-1. Window 3 (power during Metadata_Save):
+1. Window 1 (power during erase/write in BL functions other the FW update):
+  IDLE → ERASING/WRITING → [power lost]
+    On next boot: detect ERASING/WRITING → re-erase → reset to IDLE
+1. Window 2 (power during Metadata_Save):
   **Dual metadata slots:** Two copies of the `Metadata` struct are maintained with a monotonically increasing `sequence` counter. `Metadata_Save` always writes to the copy with the lower sequence number. `Metadata_Load` uses the copy with the higher sequence number that has a valid magic and CRC. One copy is always valid even if the write of the other is interrupted mid-erase.
-1. Power loss during CRC/ECDSA verification (TO BE IMPLEMENTED):
-  COMPLETE → [power lost]
-  On next boot: detect COMPLETE → re-verify from flash → 
-    if passes: set PENDING, IDLE
-    if fails:  re-erase, reset to IDLE, send RESUME_RESTART
+1. Power loss during FW update:
+  Cases handled in metadata states below. 
+  send RESUME_RESTART to python (TODO)
 ---
 
 ### Metadata struct
 
 ```c
+typedef enum {
+    BL_STATE_IDLE = 0x0, // no writing in prog
+    BL_STATE_ERASING = 0x1, // erase started not completed
+    BL_STATE_WRITING = 0x2, // write started not completed
+} BLState;
+
+typedef enum {
+    FWU_STATE_IDLE = 0x0,
+    FWU_STATE_START = 0x1,
+    FWU_STATE_ERASEDSLOT = 0x2,
+    FWU_STATE_WRITECOMPLETE = 0x3,
+    FWU_STATE_CRCVERIFIED = 0x4,
+    FWU_STATE_ECCVERIFIED = 0x5,
+} FWUState; 
+
+// ... image state explained in detail in another section
+
 typedef struct __attribute__((packed)) {
     uint32_t magic;
     uint32_t SLOTA_LATEST;
-    uint32_t bootcount; // increment every boot, clear by successful firmware
+    uint32_t bootcount;
     uint8_t  FW_VER_MAJOR;
     uint8_t  FW_VER_MINOR;
     uint16_t _pad;
     uint32_t image_state;
     uint32_t runtime_fault_count;
-    uint32_t sequence; // monotonically increasing — higher = newer
+    uint32_t sequence;
     uint8_t iv[16];
-    uint32_t write_state;
+    uint32_t fw_size;
+    uint32_t bl_state;
+    uint32_t fwu_state;
     uint32_t crc; 
 } Metadata;
-```
-The write states are as follows: 
-```c
-typedef enum {
-    WRITE_STATE_IDLE = 0x0, // no writing in prog
-    WRITE_STATE_ERASING = 0x1, // erase started not completed
-    WRITE_STATE_WRITING = 0x2, // write started not completed
-    WRITE_STATE_COMPLETE = 0x3, // all bytes written
-} WriteState;
 ```
 
 #### Deterministic Metadata Image State State Machine
@@ -449,6 +455,13 @@ flowchart TD
 ```
 
 ---
+## Testing
+Using [Fake-Function-Framework-(fff)](https://github.com/meekrosoft/fff). 
+!! todo
+- Github Actions: Tests in GTest
+  - Feature unit tests
+  - Static tests: cppcheck, clang-tidy
+---
 ## Third-Party Libraries
 
 | Library | Version/Commit | Purpose | License |
@@ -456,6 +469,7 @@ flowchart TD
 | [tiny-AES-c](https://github.com/kokke/tiny-AES-c) | Latest | AES-128 CTR encryption/decryption | Unlicense |
 | [micro-ecc](https://github.com/kmackay/micro-ecc) | Latest | ECDSA P-256 signing and verification | BSD 2-Clause |
 | [crypto-algorithms](https://github.com/B-Con/crypto-algorithms) | Latest | SHA-256 digest computation | Public Domain |
+| [Fake-Function-Framework-(fff)](https://github.com/meekrosoft/fff) | Latest | micro-framework for creating fake C functions for tests | MIT License |
 | printf-stdarg.c | — | Lightweight printf for embedded | LGPL — Copyright 2001, 2002 Georges Menie (www.menie.org), stdarg version contributed by Christian Ettinger |
 | STM32F1xx HAL | CubeMX generated | STM32F1 peripheral drivers | BSD 3-Clause |
 | CMSIS | ARM | Cortex-M3 core support | Apache 2.0 |

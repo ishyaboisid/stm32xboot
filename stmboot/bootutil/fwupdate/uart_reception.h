@@ -33,5 +33,6 @@ typedef enum {
 } RECEP_STATUS;
 
 RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta);
+bool Reverify_Signature(Metadata *meta, uint32_t slot_addr);
 
 #endif

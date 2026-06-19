@@ -14,11 +14,19 @@
 #define RUNTIME_BOOT_COUNT_MAX 10U
 
 typedef enum {
-    WRITE_STATE_IDLE = 0x0, // no writing in prog
-    WRITE_STATE_ERASING = 0x1, // erase started not completed
-    WRITE_STATE_WRITING = 0x2, // write started not completed
-    WRITE_STATE_COMPLETE = 0x3, // all bytes written
-} WriteState;
+    BL_STATE_IDLE = 0x0, // no writing in prog
+    BL_STATE_ERASING = 0x1, // erase started not completed
+    BL_STATE_WRITING = 0x2, // write started not completed
+} BLState; // todo change to systemstate
+
+typedef enum {
+    FWU_STATE_IDLE = 0x0,
+    FWU_STATE_START = 0x1,
+    FWU_STATE_ERASEDSLOT = 0x2,
+    FWU_STATE_WRITECOMPLETE = 0x3,
+    FWU_STATE_CRCVERIFIED = 0x4,
+    FWU_STATE_ECCVERIFIED = 0x5,
+} FWUState; 
 
 typedef enum {
     IMG_STATE_NONE = 0x0, // no fw erased flash
@@ -28,7 +36,7 @@ typedef enum {
     IMG_STATE_REVERTED = 0x4, // BOOT_COUNT_MAX exceeded, rolled back
 } ImageState;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) { // using fixed-width integer types for stored state values rather than relying on enum size.
     uint32_t magic;
     uint32_t SLOTA_LATEST;
     uint32_t bootcount; // increment every boot, clear by successful firmware
@@ -39,7 +47,9 @@ typedef struct __attribute__((packed)) {
     uint32_t runtime_fault_count;
     uint32_t sequence; // monotonically increasing — higher = newer
     uint8_t iv[16];
-    uint32_t write_state;
+    uint32_t fw_size;
+    uint32_t bl_state;
+    uint32_t fwu_state;
     uint32_t crc; 
 } Metadata;
 
