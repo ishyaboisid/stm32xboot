@@ -64,37 +64,37 @@ stmboot is a 24KB bootloader that sits at the start of STM32 flash memory. Moreo
 ## TBD Features
 in order of priority:
 ### Housekeeping:
-	1	Test IWDG
-	2	Power loss: Make Python/BL script resume restart when possible
-	4	Verify signature before booting !! (Added commented code, currently leads to Hard_Fault)
-	5	Make modules build time configurable: CRC, AES, SHA256/EDCSA (Curve Selection) in Zephyr + no Zephyr
-	6	Github Actions/Testing:
-	◦	Feature unit tests GTest
-	◦	Integration testing
-	◦	Security testing
-	◦	Performance measurements - Boottime, verification time, update time/fw size, flash footprint, RAM footprint, flash wear resistance/levelling
-	◦	Static tests: cpp-check, clang-tidy
+1. Test IWDG
+1. Power loss: Make Python/BL script resume restart when possible
+1. Verify signature before booting !! (Added commented code, currently leads to Hard_Fault)
+1. Make modules build time configurable: CRC, AES, SHA256/EDCSA (Curve Selection) in Zephyr + no Zephyr
+1. Github Actions/Testing:
+  - Feature unit tests GTest
+  - Integration testing
+  - Security testing
+  - Performance measurements: Boottime, verification time, update time/fw size, flash footprint, RAM footprint, flash wear resistance/levelling
+  - Static tests: cpp-check, clang-tidy
 ### Features:
-	1	USB FWU path: dfu-util host and dfu protocol
-	2	Security:
-	◦	Cryptographic ownership transfer by rotating root keys - Public Key Infrastructure
-	◦	Immutable Trust Chain
-	1	Two-stage boot (OEMiRoT + uRoT equivalent)
-	2	Bootloader self-update (wolfBoot equivalent)
-	◦	Documentation update/Literature standards 4 report: NIST recommendations, IEC 62443, ETSI IoT security recommendations
-	3	Constant-time comparison for signature/CRC verification. avoid early-exit byte comparisons that leak timing information
-	4	Secure erase of sensitive RAM after use: zero out AES key context, decrypted chunks, and IV material after each update completes
-	5	PVD brownout check: use the STM32's Programmable Voltage Detector to defer flash writes when voltage is already sagging
+1. USB FWU path: dfu-util host and dfu protocol
+1. Security:
+  - Cryptographic ownership transfer by rotating root keys - Public Key Infrastructure
+  - Immutable Trust Chain
+    - Two-stage boot (OEMiRoT + uRoT equivalent)
+    - Bootloader self-update (wolfBoot equivalent)
+  - Documentation update/Literature standards 4 report: NIST recommendations, IEC 62443, ETSI IoT security recommendations
+1. Constant-time comparison for signature/CRC verification. avoid early-exit byte comparisons that leak timing information
+1. Secure erase of sensitive RAM after use: zero out AES key context, decrypted chunks, and IV material after each update completes
+1. PVD brownout check: use the STM32's Programmable Voltage Detector to defer flash writes when voltage is already sagging
 ### Extensions:
-	1	Zephyr Sysbuild
-	2	Shell
-	3	Settings/Meta KV store
-	4	Diagnostics at boot (ram integrity check, peripheral detection, flash wear?) 
-	1	Diagnostics recorded into protected memory after failure
-	5	Rollback: Delta History
-	6	Self-Documenting Hardware
-	1	@ boot, the device exposes itself as a USB drive containing schematics, datasheets, API docs, service manuals
-	8	ESP32 OTA update path -> UART (espIDF mbedTLS)
+1. Zephyr Sysbuild
+1. Shell
+1. Settings/Meta KV store
+1. Diagnostics at boot (ram integrity check, peripheral detection, flash wear?) 
+  - Diagnostics recorded into protected memory after failure
+1. Rollback: Delta History
+1. Self-Documenting Hardware
+  - @ boot, the device exposes itself as a USB drive containing schematics, datasheets, API docs, service manuals
+1. ESP32 OTA update path -> UART (espIDF mbedTLS)
 
 ## Architecture
 
