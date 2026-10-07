@@ -12,6 +12,7 @@ project(Bootloader C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # apply cpu flags globally — must happen after project()
 add_compile_options(${BOARD_CPU_FLAGS})
@@ -20,26 +21,36 @@ add_link_options(${BOARD_CPU_FLAGS})
 # ── boot and bootutil sources ────────────────────────────────────
 set(APP_SOURCES
     boot/main.c
-    bootutil/fwupdate/uart_reception.c
-    bootutil/fwupdate/metadata.c
+    bootutil/fwupdate/uart/uart_reception.c
+    bootutil/blupdate/blupdate.c
+    bootutil/meta/metadata.c
     bootutil/crypto/verify.c
     bootutil/crypto/aes_ctr.c
     third_party/printf-stdarg.c
     third_party/aes/src/aes.c
     third_party/sha256/src/sha256.c
     third_party/uECC/uECC.c
+
+    #irot
+    ../iROT/src/iROT_metadata.c
 )
 
 set(APP_INCLUDES
     boot
     bootutil
+    bootutil/blupdate
     bootutil/crypto
+    bootutil/fwupdate/uart
+    bootutil/meta
     platform
     platform/pal
     third_party/
     third_party/aes/inc
     third_party/sha256/inc
     third_party/uECC
+
+    #irot
+    ../iROT/inc
 )
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
@@ -66,6 +77,7 @@ add_executable(Bootloader
 target_include_directories(Bootloader PRIVATE
     ${BOARD_INCLUDES}
     ${APP_INCLUDES}
+    ../iROT/inc
 )
 
 target_compile_definitions(Bootloader PRIVATE
@@ -88,7 +100,7 @@ target_compile_options(Bootloader PRIVATE
     -Wall
     -fdata-sections
     -ffunction-sections
-    $<$<CONFIG:Debug>:-Og -g3>
+    $<$<CONFIG:Debug>:-Os -g3>
     $<$<CONFIG:Release>:-Os>
 )
 

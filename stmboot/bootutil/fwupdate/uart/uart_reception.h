@@ -19,8 +19,10 @@ Data is padded to a mutiple of 4 bytes with 0xFF before CRC calculation (CRC com
 byte - page 64 rm0008)
 */
 
-#define RECEP_START_0 0xAAU
-#define RECEP_START_1 0xBBU
+#define FW_RECEP_START_0 0xAAU
+#define FW_RECEP_START_1 0xBBU
+#define BL_RECEP_START_0 0xCCU
+#define BL_RECEP_START_1 0xDDU
 
 typedef enum {
     RECEP_OK = 0,
@@ -32,7 +34,7 @@ typedef enum {
     RECEP_ERR_VERSION,
 } RECEP_STATUS;
 
-RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta);
+RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta, int ptype); // package type, 0 = fw, 1 = BL
 bool Reverify_Signature(Metadata *meta, uint32_t slot_addr);
 
 #endif

@@ -18,6 +18,6 @@ target_sources(app PRIVATE src/main.c)
 #     POST_BUILD
 #     COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/../upload.sh
 #             ${PROJECT_BINARY_DIR}/zephyr/zephyr.bin
-#     COMMENT "STMBoot: signing, encrypting and uploading firmware..."
+#     COMMENT "STMBoot: signing, encrypting and uploading firmware..." // todo make a python tool just for preparing the image
 #     VERBATIM
 # )

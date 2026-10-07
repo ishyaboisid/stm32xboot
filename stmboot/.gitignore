@@ -1,2 +1,16 @@
 build/
 .DS_Store
+third_party/STM32_USB_Device_Library
+platform/stm32/f1/USBDEVICETarget
+platform/stm32/g4/USBDEVICETarget
+platform/stm32/h7/USBDEVICETarget
+platform/stm32/f1/pal/pal_usb.c
+platform/pal/pal_usb.h
+bootutil/fwupdate/usb_dfu
+drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h
+drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h
+drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h
+drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd_ex.c
+drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c
+drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_usb.c
+.vscode/

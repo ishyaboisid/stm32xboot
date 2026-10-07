@@ -1,5 +1,6 @@
 #include "verify.h"
 #include "crypto/public_key.h"
+#include "/Users/siddharthmanikant/Desktop/Bachelor_Project/iROT/keys/iROT_public_key.h"
 #include "uECC/uECC.h"
 #include "sha256/inc/sha256.h"
 
@@ -20,4 +21,14 @@ int Verify_Firmware(uint8_t *data, size_t data_len, uint8_t *signature) {
     sha256_final(&ctx, hash); // write 32-byte digest into hash[]
 
     return uECC_verify(ECDSA_PUBLIC_KEY, hash, sizeof(hash), signature, uECC_secp256r1());
+}
+
+int Verify_BL(uint8_t *data, size_t data_len, uint8_t *signature) {
+    uint8_t hash[32];
+    SHA256_CTX ctx;
+    sha256_init(&ctx); // initialise SHA-256 internal state (set H0-H7 constants)
+    sha256_update(&ctx, data, data_len); // feed firmware bytes into the hash — can be called in chunks
+    sha256_final(&ctx, hash); // write 32-byte digest into hash[]
+
+    return uECC_verify(IROT_PUBLIC_KEY, hash, sizeof(hash), signature, uECC_secp256r1());
 }

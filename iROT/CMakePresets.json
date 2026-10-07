@@ -1,0 +1,98 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "f103rb-debug",
+            "displayName": "F103RB Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/f103rb/debug",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BOARD": "f103rb"
+            }
+        },
+        {
+            "name": "f103rb-release",
+            "displayName": "F103RB Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/f103rb/release",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BOARD": "f103rb"
+            }
+        },
+        {
+            "name": "g474re-debug",
+            "displayName": "G474RE Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/g474re/debug",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BOARD": "g474re"
+            }
+        },
+        {
+            "name": "g474re-release",
+            "displayName": "G474RE Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/g474re/release",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BOARD": "g474re",
+                "BL_LOG_LEVEL": "1"
+            }
+        },
+        {
+            "name": "h743zi-debug",
+            "displayName": "H743ZI Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/h743zi/debug",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BOARD": "h743zi"
+            }
+        },
+        {
+            "name": "h743zi-release",
+            "displayName": "H743ZI Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/h743zi/release",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BOARD": "h743zi"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "f103rb-debug",
+            "configurePreset": "f103rb-debug"
+        },
+        {
+            "name": "f103rb-release",
+            "configurePreset": "f103rb-release"
+        },
+        {
+            "name": "g474re-debug",
+            "configurePreset": "g474re-debug"
+        },
+        {
+            "name": "g474re-release",
+            "configurePreset": "g474re-release"
+        },
+        {
+            "name": "h743zi-debug",
+            "configurePreset": "h743zi-debug"
+        },
+        {
+            "name": "h743zi-release",
+            "configurePreset": "h743zi-release"
+        }
+    ]
+}

@@ -5,5 +5,6 @@
 #include <stddef.h>
 
 int Verify_Firmware(uint8_t *data, size_t data_len, uint8_t *signature);
+int Verify_BL(uint8_t *data, size_t data_len, uint8_t *signature);
 
 #endif

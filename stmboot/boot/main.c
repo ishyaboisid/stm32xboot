@@ -1,5 +1,6 @@
 // screen /dev/tty.usbmodem103 115200 
 #include "main.h"
+#include "blupdate.h"
 Metadata meta;
 
 extern uint32_t iwdg_reset;
@@ -136,13 +137,16 @@ int main(void)
   BL_LOG("Setting LED...\r\n"); 
   Task_BL_SetLED();
 
-  BL_LOG("Starting bootloader (0.1)\r\n");
+  BL_LOG("Starting bootloader (0.3)\r\n");
 
   BL_LOG("Updating Image State...\r\n");
   update_image_state(&meta);
 
   BL_LOG("Checking Interrupted Write...\r\n");
   check_interrupted_write(&meta);
+
+  meta.bl_update_requested = 0; // todo bl_update_requested remove after testing
+  check_for_bl_update(&meta); 
 
   BL_LOG("Checking for update...\r\n");
   check_for_update(&meta, AUTOMATIC_UPDATE);
@@ -172,10 +176,10 @@ static void goto_application(Metadata *meta) {
     BL_LOG("Jumping to application...\r\n");
     PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
     BL_LOG("Verifying firmware signature..\r\n");
-    // if (!Reverify_Signature(meta, boot_addr)) { // todo
-    //   BL_LOG("Firmware signature verification failed, staying in bootloader...\r\n");
-    //   return; 
-    // }
+    if (!Reverify_Signature(meta, boot_addr)) { // todo
+      BL_LOG("Firmware signature verification failed, staying in bootloader...\r\n");
+      return; 
+    }
     void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (boot_addr + 4U));
     /** @todo implement PAL functions needed before jumping to app */
     /*
@@ -219,7 +223,7 @@ static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
     BL_LOG("Starting Firmware Download!\r\n");
     PAL_UART_Transmit((uint8_t *)"READY\r\n", 7, 100);
     PAL_UARTEx_Receive_DMA(header_buf, sizeof(header_buf));
-    if (UART_Receive(header_buf, meta) == RECEP_OK) {
+    if (UART_Receive(header_buf, meta, 0) == RECEP_OK) {
       Metadata_UpdateAfterRecieve(meta, meta->SLOTA_LATEST);
       PAL_UART_Transmit((uint8_t *)"OK\r\n", 4, 100);
       BL_LOG("Firmware update done!\r\nRebooting...\r\n");

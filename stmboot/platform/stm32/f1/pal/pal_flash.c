@@ -4,11 +4,12 @@
 
 static int is_valid_slot_address(uint32_t addr) { // private fn
     return ( (( addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)))) ||
-    (addr >= METADATA_ADDRESS_SLOT1 && addr < FLASH_EOF) );
+    (addr >= METADATA_ADDRESS_SLOT1 && addr < FLASH_EOF)  || 
+    (addr == 0x08001C00) ); // todo have to change here everytime I moved irot metadata address
 }
 
 PAL_Flash_StatusTypeDef PAL_Flash_ErasePage(uint32_t page_address) {
-    if (!is_valid_slot_address(page_address)) return FLASH_ERR_INVALID_ADDR;
+    // if (!is_valid_slot_address(page_address)) return FLASH_ERR_INVALID_ADDR; // todo does this check make sense anymore? just check if irot < addr < EOF? 
     if (page_address % FLASH_PAGE_SIZE_BL != 0) return FLASH_ERR_INVALID_ADDR;
 
     FLASH_EraseInitTypeDef erase = {
@@ -19,10 +20,11 @@ PAL_Flash_StatusTypeDef PAL_Flash_ErasePage(uint32_t page_address) {
     };
 
     uint32_t page_error = 0;
+    __disable_irq();
     HAL_FLASH_Unlock();
-    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &page_error);
+    volatile HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &page_error); // todo not working for irot
     HAL_FLASH_Lock();
-
+    __enable_irq();
     if (status != HAL_OK || page_error != 0xFFFFFFFF) return FLASH_ERR_ERASE; // 0xFFFFFFFF means that all the pages have been correctly erased
     return FLASH_OK;
 }
@@ -53,8 +55,8 @@ The odd-length case is why  padding exists. If len = 5:
 Without pad reading src[5] is out of bounds. 0xFF is safe as erased flash is already 0xFF 
 */
 PAL_Flash_StatusTypeDef PAL_Flash_Write(uint32_t dest, const uint8_t *src, size_t len) {
-   if (!is_valid_slot_address(dest)) return FLASH_ERR_INVALID_ADDR;
-   
+//    if (!is_valid_slot_address(dest)) return FLASH_ERR_INVALID_ADDR; // same todo as flash erase
+  __disable_irq(); 
    HAL_FLASH_Unlock();
 
    for (size_t i = 0; i < len; i+=2) {
@@ -69,5 +71,6 @@ PAL_Flash_StatusTypeDef PAL_Flash_Write(uint32_t dest, const uint8_t *src, size_
    }
 
    HAL_FLASH_Lock();
+   __enable_irq();
    return FLASH_OK;
 }

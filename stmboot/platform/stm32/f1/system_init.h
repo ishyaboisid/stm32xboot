@@ -3,6 +3,7 @@
 #include "stm32f1xx_hal_iwdg.h"
 #include "bsp/f103rb/pinmap.h"
 #include "bsp/f103rb/board_config.h"
+// #include "usb_device.h" // todo usb
 
 extern UART_HandleTypeDef  huart2;
 extern CRC_HandleTypeDef   hcrc;

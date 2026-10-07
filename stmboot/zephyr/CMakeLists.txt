@@ -3,7 +3,7 @@ if (CONFIG_BOOTLOADER_STMBOOT)
 zephyr_library()
 zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/stmboot_api.c
-    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/fwupdate/metadata.c
+    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/meta/metadata.c
     ${CMAKE_CURRENT_LIST_DIR}/pal/zephyr_pal_flash.c
     ${CMAKE_CURRENT_LIST_DIR}/pal/zephyr_pal_crc.c
 )
@@ -11,7 +11,8 @@ zephyr_library_sources(
 zephyr_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/../bootutil/crypto
-    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/fwupdate
+    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/fwupdate/uart
+    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/meta 
     ${CMAKE_CURRENT_LIST_DIR}/../platform
     ${CMAKE_CURRENT_LIST_DIR}/../platform/pal
 

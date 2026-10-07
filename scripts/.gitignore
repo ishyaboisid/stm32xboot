@@ -3,5 +3,5 @@ Application.enc.bin
 /__pycache__
 Application.signed.bin
 private_key.pem
-keygen_iROT.py 
+iROT_private_key.pem
 sign_iROT.py

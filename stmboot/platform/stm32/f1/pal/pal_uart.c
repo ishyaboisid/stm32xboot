@@ -15,7 +15,8 @@ PAL_UART_StatusTypeDef PAL_UART_Receive(uint8_t *pData, uint16_t Size, uint32_t 
 
 PAL_UART_StatusTypeDef PAL_UARTEx_Receive_DMA(uint8_t *pData, uint16_t Size) {
     uart_rx_done = 0; uart_size = 0;
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, pData, Size);
+    HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle_DMA(&huart2, pData, Size);
+    if (status != HAL_OK) return status;
     __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
     uint32_t start = HAL_GetTick();
     while (!uart_rx_done || uart_size != Size) {

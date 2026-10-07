@@ -63,13 +63,33 @@ New design:
 0x08006000  Slot A       48 KB → 0x08012000
 0x08012000  Slot B       48 KB → 0x0801E000
 0x0801E000  Metadata      8 KB → 0x08020000
+
+newer updated design: 
+0x08000000 ── iRoT (7 KB)
+              0x08000000 - 0x08001BFF
+
+0x08001C00 ── iROT Metadata (1 KB)
+              0x08001C00 - 0x08001FFF
+
+0x08002000 ── STMBoot (24 KB)
+              0x08002000 - 0x08007FFF
+
+0x08008000 ── Slot A (47 KB)
+              0x08008000 - 0x08013BFF
+
+0x08013C00 ── Slot B (47 KB)
+              0x08013C00 - 0x0801F7FF
+
+0x0801F800 ── Metadata Slot A (1 KB)
+0x0801FC00 ── Metadata Slot B (1 KB)
+              0x0801F800 - 0x0801FFFF
 */
 
 /* Specify the memory areas */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 20K
-FLASH (rx)      : ORIGIN = 0x08006000, LENGTH = 48K
+FLASH (rx)      : ORIGIN = 0x08008000, LENGTH = 47K /* was 0x08006000, LENGTH = 48K */
 }
 
 /* Highest address of the user mode stack */

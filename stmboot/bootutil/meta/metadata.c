@@ -65,9 +65,7 @@ PAL_Flash_StatusTypeDef Metadata_Save(Metadata *m) {
     temp.sequence = active->sequence + 1;
     temp.crc = compute_metadata_crc(&temp);
 
-    if(PAL_Flash_ErasePage(target) != FLASH_OK) {
-        return FLASH_ERR_ERASE;
-    }
+    if(PAL_Flash_ErasePage(target) != FLASH_OK) return FLASH_ERR_ERASE;
 
     if(PAL_Flash_Write(target, (const uint8_t *)&temp, sizeof(Metadata)) != FLASH_OK) {
         return FLASH_ERR_WRITE;

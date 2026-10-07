@@ -6,8 +6,8 @@
 #endif
 
 #include "logging.h"
-#include "fwupdate/uart_reception.h"
-#include "fwupdate/metadata.h"
+#include "fwupdate/uart/uart_reception.h"
+#include "meta/metadata.h"
 #include "platform.h"
 
 #if BL_LOG_LEVEL == BL_LOG_PRINTF

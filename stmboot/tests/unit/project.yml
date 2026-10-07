@@ -100,11 +100,13 @@
     - +:test/**
     - -:test/support
   :source:
-    - ../../bootutil/fwupdate/**
+    - ../../bootutil/fwupdate/uart**
+    - ../../bootutil/meta**
     - ../../bootutil/crypto/**
   :include:
     - ../../bootutil
-    - ../../bootutil/fwupdate
+    - ../../bootutil/fwupdate/uart
+    - ../../bootutil/meta
     - ../../bootutil/crypto
     - ../../platform/pal
     - ../../platform

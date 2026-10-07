@@ -19,29 +19,49 @@ uint8_t received_crc[4];
 #define RECV_TIMEOUT_MS  5000U
 #define BYTE_TIMEOUT_MS  2000U
 
+int bl_update = 0;
+
+uint8_t VER_MAJOR;
+uint8_t VER_MINOR;
+
+uint32_t write_addr;
+
 static struct AES_ctx ctx; // context
 
 static void send_ack(void) { PAL_UART_Transmit((uint8_t *)"ACK\r\n", 5, 100); }
 static void send_nack(void) { PAL_UART_Transmit((uint8_t *)"NACK\r\n", 6, 100); }
 
-RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
+RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta, int ptype) { // why do I need ptype and bl_update todo 
     meta->fwu_state = FWU_STATE_START;
     Metadata_Save(meta);
     uint8_t size_buf[4];
 
-    if(received_header[0] != RECEP_START_0) { send_nack(); return RECEP_ERR_START; }
-    if(received_header[1] != RECEP_START_1) { send_nack(); return RECEP_ERR_START; }
+    if ((received_header[0] == FW_RECEP_START_0) && (received_header[1] == FW_RECEP_START_1)) {
+        bl_update = 0;
+    } else if ((received_header[0] == BL_RECEP_START_0) && (received_header[1] == BL_RECEP_START_1)) {
+        bl_update = 1;
+    } else {
+        send_nack();
+        return RECEP_ERR_START;
+    }
 
     uint8_t incoming_fwv_major = received_header[2];
     uint8_t incoming_fwv_minor = received_header[3];
     // #ifndef DEBUG 
-    if (incoming_fwv_major < meta->FW_VER_MAJOR || (incoming_fwv_major == meta->FW_VER_MAJOR && incoming_fwv_minor <= meta->FW_VER_MINOR)) { // will be disregarded when debugging
+    if (bl_update == 0) {
+        VER_MAJOR = meta->FW_VER_MAJOR;
+        VER_MINOR = meta->FW_VER_MINOR;
+    } else {
+        VER_MAJOR = meta->BL_VER_MAJOR;
+        VER_MINOR = meta->BL_VER_MINOR;
+    }
+    if (incoming_fwv_major < VER_MAJOR || (incoming_fwv_major == VER_MAJOR && incoming_fwv_minor <= VER_MINOR)) { // will be disregarded when debugging
         send_nack();
         return RECEP_ERR_VERSION;
     }
     // #endif
     
-    uint32_t write_addr;
+    // uint32_t write_addr;
     if (meta->SLOTA_LATEST) {
         // meta->bl_state = BL_STATE_ERASING;
         Metadata_Save(meta);
@@ -83,8 +103,9 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     // meta->bl_state  = BL_STATE_WRITING;
     Metadata_Save(meta);
 
-    send_ack(); // for IV recieved
     PAL_CRC_Reset(); // sets hcrc.Instance->CR = CRC_CR_RESET -> 0xFFFFFFFF
+    send_ack(); // for IV recieved
+
     while (remaining_data > 0) {
         uint32_t chunk_len = remaining_data < UART_RECEP_CHUNK_SIZE ? remaining_data : UART_RECEP_CHUNK_SIZE;
         if (PAL_UARTEx_Receive_DMA(chunk, chunk_len) != PAL_OK) {
@@ -128,12 +149,29 @@ RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta) {
     for (int i = 0; i < 64; i++) {
         signature[i] = *(volatile uint8_t *)(sig_addr + i); 
     }
-    if (!Verify_Firmware((uint8_t *)which_slot_addr, total_len - 64U, signature)) { // returns uECC_verify which return int 1 if signature valid and 0 if not
+    if (ptype == 0) {
+        if (!Verify_Firmware((uint8_t *)which_slot_addr, total_len - 64U, signature)) { // returns uECC_verify which return int 1 if signature valid and 0 if not
+            send_nack();
+            // meta->bl_state = BL_STATE_ERASING;
+            Metadata_Save(meta);
+            if(PAL_Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES)) return RECEP_ERR_RECV;
+            // meta->bl_state = BL_STATE_IDLE;
+            Metadata_Save(meta);
+            return RECEP_ERR_SIG; 
+        }
+    } else if (ptype == 1) {
+        if (!Verify_BL((uint8_t *)which_slot_addr, total_len - 64U, signature)) { // returns uECC_verify which return int 1 if signature valid and 0 if not
+            send_nack();
+            Metadata_Save(meta);
+            meta->bl_update_requested = 0;
+            if(PAL_Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES)) return RECEP_ERR_RECV;
+            Metadata_Save(meta);
+            return RECEP_ERR_SIG; 
+        }
+    } else {
         send_nack();
-        // meta->bl_state = BL_STATE_ERASING;
         Metadata_Save(meta);
         if(PAL_Flash_EraseSlot(which_slot_addr, SLOT_NUM_PAGES)) return RECEP_ERR_RECV;
-        // meta->bl_state = BL_STATE_IDLE;
         Metadata_Save(meta);
         return RECEP_ERR_SIG; 
     }
@@ -157,5 +195,5 @@ bool Reverify_Signature(Metadata *meta, uint32_t slot_addr) {
     for (int i = 0; i < 64; i++) {
         signature[i] = *(volatile uint8_t *)(sig_addr + i);
     }
-    return Verify_Firmware((const uint8_t *)slot_addr, meta->fw_size - 64U, signature);
+    return Verify_Firmware((uint8_t *)slot_addr, meta->fw_size - 64U, signature);
 }
