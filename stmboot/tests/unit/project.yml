@@ -100,25 +100,25 @@
     - +:test/**
     - -:test/support
   :source:
-    - ../../bootutil/fwupdate/uart**
+    - ../../bootutil/transport/uart**
     - ../../bootutil/meta**
     - ../../bootutil/crypto/**
   :include:
     - ../../bootutil
-    - ../../bootutil/fwupdate/uart
+    - ../../bootutil/transport/uart
     - ../../bootutil/meta
     - ../../bootutil/crypto
-    - ../../platform/pal
-    - ../../platform
-    - ../../platform/stm32/f1
-    - ../../platform/bsp/f103rb
-    - ../../drivers/STM32F1xx_HAL_Driver/Inc
-    - ../../drivers/CMSIS/Include
-    - ../../drivers/CMSIS/Device/ST/STM32F1xx/Include
-    - ../../third_party/
-    - ../../third_party/aes/inc
-    - ../../third_party/sha256/inc
-    - ../../third_party/uECC
+    - ../../../platform/pal
+    - ../../../platform
+    - ../../../platform/stm32/f1
+    - ../../../platform/bsp/f103rb
+    - ../../../drivers/STM32F1xx_HAL_Driver/Inc
+    - ../../../drivers/CMSIS/Include
+    - ../../../drivers/CMSIS/Device/ST/STM32F1xx/Include
+    - ../../../lib/
+    - ../../../lib/aes/inc
+    - ../../../lib/sha256/inc
+    - ../../../lib/uECC
   :support:
     - test/support
   :libraries: []

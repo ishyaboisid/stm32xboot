@@ -29,12 +29,10 @@ typedef enum {
     RECEP_ERR_START,
     RECEP_ERR_SIZE,
     RECEP_ERR_RECV,
-    RECEP_ERR_CRC32,
-    RECEP_ERR_SIG,
     RECEP_ERR_VERSION,
+    RECEP_ERR_SEC,
 } RECEP_STATUS;
 
 RECEP_STATUS UART_Receive(uint8_t* received_header, Metadata *meta, int ptype); // package type, 0 = fw, 1 = BL
-bool Reverify_Signature(Metadata *meta, uint32_t slot_addr);
 
 #endif

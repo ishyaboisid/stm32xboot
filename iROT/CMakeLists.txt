@@ -25,18 +25,18 @@ set(APP_SOURCES
     src/iROT_verify.c
     src/iROT_clock.c
     src/iROT_flash.c
-    third_party/sha256/src/sha256.c
-    third_party/uECC/uECC.c
+    ../lib/sha256/src/sha256.c
+    ../lib/uECC/uECC.c
     src/hal_handles.c
 )
 
 set(APP_INCLUDES
     inc/
-    third_party/sha256/inc
-    third_party/uECC
-    third_party
+    ../lib/sha256/inc
+    ../lib/uECC
+    ../lib
     keys
-    /Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/platform
+    /Users/siddharthmanikant/Desktop/Bachelor_Project/platform
 )
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 

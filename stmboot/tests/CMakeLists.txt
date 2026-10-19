@@ -15,14 +15,14 @@ set(ANALYSIS_SOURCES
     ${CMAKE_SOURCE_DIR}/bootutil/crypto/aes_ctr.c
     ${CMAKE_SOURCE_DIR}/bootutil/crypto/verify.c
     ${CMAKE_SOURCE_DIR}/bootutil/meta/metadata.c
-    ${CMAKE_SOURCE_DIR}/bootutil/fwupdate/uart/uart_reception.c
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/system_init.c 
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_crc.c 
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_flash.c 
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_gpio.c
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_iwdg.c
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_time.c 
-    ${CMAKE_SOURCE_DIR}/platform/stm32/f1/pal/pal_uart.c 
+    ${CMAKE_SOURCE_DIR}/bootutil/transport/uart/uart_reception.c
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/system_init.c 
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_crc.c 
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_flash.c 
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_gpio.c
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_iwdg.c
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_time.c 
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_uart.c 
 )
 
 add_custom_target(cppcheck

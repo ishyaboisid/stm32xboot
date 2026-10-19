@@ -11,10 +11,10 @@ zephyr_library_sources(
 zephyr_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/../bootutil/crypto
-    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/fwupdate/uart
+    ${CMAKE_CURRENT_LIST_DIR}/../bootutil/transport/uart
     ${CMAKE_CURRENT_LIST_DIR}/../bootutil/meta 
-    ${CMAKE_CURRENT_LIST_DIR}/../platform
-    ${CMAKE_CURRENT_LIST_DIR}/../platform/pal
+    ${CMAKE_CURRENT_LIST_DIR}/../../platform
+    ${CMAKE_CURRENT_LIST_DIR}/../../platform/pal
 
 )
 

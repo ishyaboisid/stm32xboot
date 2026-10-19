@@ -6,7 +6,8 @@
 #endif
 
 #include "logging.h"
-#include "fwupdate/uart/uart_reception.h"
+#include "transport/uart/uart_reception.h"
+#include "img_security.h"
 #include "meta/metadata.h"
 #include "platform.h"
 

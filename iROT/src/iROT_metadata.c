@@ -1,7 +1,7 @@
 #include "iROT_metadata.h"
 // todo decision: should I pull pal->HAL or directly implement flash writing for size?
-#include "../../stmboot/platform/pal/pal_flash.h" 
-#include "../../stmboot/platform/pal/pal_crc.h" 
+#include "../../platform/pal/pal_flash.h" 
+#include "../../platform/pal/pal_crc.h" 
 #include <string.h>
 
 // static uint32_t compute_metadata_crc(IROT_Metadata *m) { // todo crc

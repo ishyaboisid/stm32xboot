@@ -21,15 +21,16 @@ add_link_options(${BOARD_CPU_FLAGS})
 # ── boot and bootutil sources ────────────────────────────────────
 set(APP_SOURCES
     boot/main.c
-    bootutil/fwupdate/uart/uart_reception.c
+    bootutil/transport/uart/uart_reception.c
     bootutil/blupdate/blupdate.c
     bootutil/meta/metadata.c
+    bootutil/img_security.c
     bootutil/crypto/verify.c
     bootutil/crypto/aes_ctr.c
-    third_party/printf-stdarg.c
-    third_party/aes/src/aes.c
-    third_party/sha256/src/sha256.c
-    third_party/uECC/uECC.c
+    ../lib/printf-stdarg.c
+    ../lib/aes/src/aes.c
+    ../lib/sha256/src/sha256.c
+    ../lib/uECC/uECC.c
 
     #irot
     ../iROT/src/iROT_metadata.c
@@ -40,14 +41,14 @@ set(APP_INCLUDES
     bootutil
     bootutil/blupdate
     bootutil/crypto
-    bootutil/fwupdate/uart
+    bootutil/transport/uart
     bootutil/meta
-    platform
-    platform/pal
-    third_party/
-    third_party/aes/inc
-    third_party/sha256/inc
-    third_party/uECC
+    ../platform
+    ../platform/pal
+    ../lib/
+    ../lib/aes/inc
+    ../lib/sha256/inc
+    ../lib/uECC
 
     #irot
     ../iROT/inc

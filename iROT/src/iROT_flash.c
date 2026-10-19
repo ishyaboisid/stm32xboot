@@ -1,7 +1,7 @@
 #include "iROT_flash.h"
 #include "iROT_verify.h"
 #include "iROT_metadata.h" // todo uint32_t wrp_state in IROT_Metadata, handle each case here
-#include "../../stmboot/platform/pal/pal_flash.h"
+#include "../../platform/pal/pal_flash.h"
 #include "../../stmboot/drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
 #include <string.h>
 

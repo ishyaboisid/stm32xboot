@@ -5,3 +5,5 @@ Application.signed.bin
 private_key.pem
 iROT_private_key.pem
 sign_iROT.py
+STMBoot.enc.bin
+STMBoot.signed.bin

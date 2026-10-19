@@ -388,7 +388,91 @@ Logging is compile-time configurable via `BL_LOG_LEVEL`. Set in `CMakeLists.txt`
 ## Bootloader Flow
 todo
 ```mermaid
-todo
+flowchart TD
+    POR([Power-on Reset]) --> IROT_LOAD
+
+    subgraph STAGE1["Stage 1 — iROT (0x08000000)"]
+        IROT_LOAD[IROT_Metadata_Load] --> IROT_CRC{Metadata\nmagic + CRC\nvalid?}
+        IROT_CRC -->|no| IROT_DEFAULTS[Reset to safe defaults\nbl_update_pending = 0]
+        IROT_CRC -->|yes| IROT_PENDING
+        IROT_DEFAULTS --> IROT_PENDING
+
+        IROT_PENDING{bl_update\npending?} -->|yes| IROT_VERIFY_STAGED
+        IROT_PENDING -->|no| IROT_VERIFY_STMBOOT
+
+        IROT_VERIFY_STAGED[Verify staged binary\nECDSA with iROT key] --> IROT_SIG_OK{Signature\nvalid?}
+        IROT_SIG_OK -->|no| IROT_CLEAR[Clear pending\nboot existing STMBoot]
+        IROT_SIG_OK -->|yes| IROT_WRP[WRP state machine\nDisable WRP → erase → copy\n→ verify → re-enable WRP]
+        IROT_WRP --> IROT_CLEAR_OK[Clear pending]
+        IROT_CLEAR --> IROT_VERIFY_STMBOOT
+        IROT_CLEAR_OK --> IROT_VERIFY_STMBOOT
+
+        IROT_VERIFY_STMBOOT[Verify STMBoot binary\nECDSA with iROT key] --> IROT_BOOT_OK{Valid?}
+        IROT_BOOT_OK -->|no| IROT_HALT([HALT — unrecoverable\nJTAG required])
+        IROT_BOOT_OK -->|yes| IROT_JUMP[Disable IRQ\nSet SCB VTOR\nSet MSP\nJump to STMBoot]
+    end
+
+    IROT_JUMP --> STMBOOT_INIT
+
+    subgraph STAGE2["Stage 2 — STMBoot (0x08001000)"]
+        STMBOOT_INIT[System_Init] --> META_LOAD[Metadata_Load\ndual-copy arbitration\nmagic + CRC + sequence]
+        META_LOAD --> SET_LED[Task_BL_SetLED]
+        SET_LED --> IMG_STATE[update_image_state]
+
+        IMG_STATE --> IS_STATE{image_state?}
+        IS_STATE -->|PENDING| TO_TRIAL[Set TRIAL\nReset bootcount\nMetadata_Save]
+        IS_STATE -->|TRIAL| BOOT_COUNT[Increment bootcount\nMetadata_Save]
+        IS_STATE -->|HEALTHY| IWDG_CHECK[Check iwdg_reset flag]
+        IS_STATE -->|REVERTED| MARK_HEALTHY[Flip slot\nSet HEALTHY\nReset counters]
+        IS_STATE -->|NONE| CIW
+
+        TO_TRIAL --> CIW
+        BOOT_COUNT --> ROLLBACK_CHECK{bootcount >\nBOOT_COUNT_MAX?}
+        ROLLBACK_CHECK -->|yes| ROLLBACK[Flip SLOTA_LATEST\nSet REVERTED\nMetadata_Save]
+        ROLLBACK_CHECK -->|no| CIW
+        ROLLBACK --> CIW
+
+        IWDG_CHECK --> IWDG_TRIPPED{IWDG reset\ndetected?}
+        IWDG_TRIPPED -->|yes| FAULT_COUNT[runtime_fault_count++\nMetadata_Save]
+        IWDG_TRIPPED -->|no| CIW
+        FAULT_COUNT --> RUNTIME_CHECK{fault_count >\nRUNTIME_FAULT_MAX?}
+        RUNTIME_CHECK -->|yes| ROLLBACK
+        RUNTIME_CHECK -->|no| CIW
+        MARK_HEALTHY --> CIW
+
+        CIW[check_interrupted_write] --> FWU_STATE{fwu_state?}
+        FWU_STATE -->|IDLE| CFU
+        FWU_STATE -->|ERASED_SLOT\nWRITE_COMPLETE| RE_ERASE[Re-erase slot\nAUTOMATIC_UPDATE = 1]
+        FWU_STATE -->|CRC_VERIFIED| RE_VERIFY[Reverify_Signature\nRe-commit or erase]
+        FWU_STATE -->|ECC_VERIFIED| RE_COMMIT[Metadata_UpdateAfterReceive]
+        RE_ERASE --> CFU
+        RE_VERIFY --> CFU
+        RE_COMMIT --> CFU
+
+        CFU[check_for_bl_update\n0xCC 0xDD header] --> BL_REQ{bl_update\nrequested?}
+        BL_REQ -->|yes| BL_RECV[Receive STMBoot binary\ninto inactive slot\nVerify with iROT key\nSet iROT bl_update_pending\nReboot]
+        BL_REQ -->|no| CFU2
+
+        CFU2[check_for_update\n0xAA 0xBB header] --> UPDATE_MODE{Button pressed\nor AUTOMATIC_UPDATE?}
+        UPDATE_MODE -->|yes| UART_RECV[UART_Receive\nheader → size → IV\n→ chunks → CRC\n→ ECDSA verify]
+        UPDATE_MODE -->|no| GOTO_APP
+
+        UART_RECV --> RECV_OK{RECEP_OK?}
+        RECV_OK -->|no| HALT_BLINK([HALT — blink error])
+        RECV_OK -->|yes| META_UPDATE[Metadata_UpdateAfterReceive\nSet PENDING\nMetadata_Save\nReboot]
+
+        GOTO_APP[goto_application\nReverify_Signature\non every boot] --> REVERIFY{ECDSA\nvalid?}
+        REVERIFY -->|no| STAY[Stay in bootloader]
+        REVERIFY -->|yes| DE_INIT[PAL_UART_DeInit\nPAL_DMA_DeInit\nPAL_CRC_DeInit\nDisable EXTI IRQ\nSysTick CTRL = 0\n__disable_irq]
+        DE_INIT --> JUMP_APP[Set SCB VTOR\nSet MSP\nJump to Application]
+    end
+
+    JUMP_APP --> APP
+
+    subgraph APP_LAYER["Application"]
+        APP[Application starts] --> STARTUP[StartupConfirm\nSet IMG_STATE_HEALTHY\nClear bootcount\nMetadata_Save]
+        STARTUP --> APP_RUN([Application running\nIWDG petting required])
+    end
 ```
 
 ## Zephyr
