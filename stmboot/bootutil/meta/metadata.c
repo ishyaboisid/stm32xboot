@@ -1,6 +1,14 @@
 #include "metadata.h"
 #include <stdint.h>
 
+#ifdef UNIT_TEST
+    #include "metadata_test_config.h"
+    #include "pal_crc.h"
+    #include "pal_flash.h"
+#else
+    #include "platform.h"
+#endif
+
 static uint32_t compute_metadata_crc(Metadata *m) {
     PAL_CRC_Reset();
     PAL_CRC_Accumulate((uint8_t *)m, offsetof(Metadata, crc));

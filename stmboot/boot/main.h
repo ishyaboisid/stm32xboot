@@ -10,6 +10,7 @@
 #include "img_security.h"
 #include "meta/metadata.h"
 #include "platform.h"
+#include "rollback_policy.h"
 
 #if BL_LOG_LEVEL == BL_LOG_PRINTF
 #warning "USING PRINTF"

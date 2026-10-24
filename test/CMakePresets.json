@@ -1,0 +1,73 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "static-analysis",
+            "displayName": "Static Analysis",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/static-analysis",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "STATIC_ANALYSIS": "ON",
+                "BOARD": "f103rb"
+            }
+        },
+        {
+            "name": "unit-tests",
+            "displayName": "Unit Tests - Ceedling",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/unit-tests",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "UNIT_TESTS": "ON",
+                "BOARD": "f103rb"
+            }
+        },
+        {
+            "name": "integration-tests",
+            "displayName": "integration Tests - Ceedling",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/integration-tests",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "INTEGRATION_TESTS": "ON",
+                "BOARD": "f103rb"
+            }
+        },
+        {
+            "name": "all-tests",
+            "displayName": "All Tests",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/all-tests",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "UNIT_TESTS": "ON",
+                "STATIC_ANALYSIS": "ON", 
+                "INTEGRATION_TESTS": "ON",
+                "BOARD": "f103rb"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "static-analysis-all",
+            "configurePreset": "static-analysis",
+            "targets": ["static-analysis"]
+        },
+        {
+            "name": "unit-tests",
+            "configurePreset": "unit-tests",
+            "targets": ["unit_tests"]
+        },
+        {
+            "name": "integration-tests",
+            "configurePreset": "integration-tests",
+            "targets": ["integration_tests"]
+        },
+                {
+            "name": "all-tests",
+            "configurePreset": "all-tests",
+            "targets": ["all_tests"]
+        }
+    ]
+}

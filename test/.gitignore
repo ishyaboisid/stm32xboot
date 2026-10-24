@@ -1,0 +1,35 @@
+# Build outputs and compiled artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.o
+*.obj
+*.a
+*.dylib
+*.so
+*.dll
+*.exe
+*.out
+
+# Ceedling generated files
+unit/build/
+
+# Coverage output
+*.gcda
+*.gcno
+*.gcov
+coverage.html
+coverage.json
+GcovCoverageResults.html
+
+# Test logs and failure artifacts
+*.log
+*.fail
+
+# macOS
+.DS_Store
+# libFuzzer build output
+fuzz/build/

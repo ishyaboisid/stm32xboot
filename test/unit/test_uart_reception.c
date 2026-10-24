@@ -1,10 +1,12 @@
 // tests/unit/test/test_uart_reception.c
 #include "unity.h"
 #include "uart_reception.h"
+#include "mock_img_security.h"
 
 #include "mock_pal_uart.h"
 #include "mock_pal_flash.h"
 #include "mock_pal_crc.h"
+#include "mock_img_security.h"
 #include "mock_verify.h"
 #include "mock_aes.h"
 #include "mock_metadata.h"
@@ -22,7 +24,7 @@ void test_UART_Receive_should_reject_wrong_start_byte_0(void) {
 
     PAL_UART_Transmit_ExpectAndReturn((uint8_t *)"NACK\r\n", 6, 100, PAL_OK);
 
-    RECEP_STATUS result = UART_Receive(bad_header, &meta);
+    RECEP_STATUS result = UART_Receive(bad_header, &meta, 0);
 
     TEST_ASSERT_EQUAL(RECEP_ERR_START, result);
 }
@@ -37,7 +39,7 @@ void test_UART_Receive_should_reject_downgrade_version(void) {
 
     PAL_UART_Transmit_ExpectAndReturn((uint8_t *)"NACK\r\n", 6, 100, PAL_OK);
 
-    RECEP_STATUS result = UART_Receive(header, &meta);
+    RECEP_STATUS result = UART_Receive(header, &meta, 0);
 
     TEST_ASSERT_EQUAL(RECEP_ERR_VERSION, result);
 }

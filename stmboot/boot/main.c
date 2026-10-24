@@ -26,14 +26,14 @@ int uart_putchar(int c)
 }
 #endif
 
-int Rollback_Check(Metadata *m) {
-  if (m->bootcount <= BOOT_COUNT_MAX || (m->runtime_fault_count <= RUNTIME_BOOT_COUNT_MAX)) return 0;
-  m->SLOTA_LATEST = !m->SLOTA_LATEST; // flip to previous slot 
-  m->bootcount = 0;
-  m->image_state = IMG_STATE_REVERTED;
-  Metadata_Save(m); 
-  return 1;
-}
+// int Rollback_Check(Metadata *m) {
+//   if (m->bootcount <= BOOT_COUNT_MAX || (m->runtime_fault_count <= RUNTIME_BOOT_COUNT_MAX)) return 0;
+//   m->SLOTA_LATEST = !m->SLOTA_LATEST; // flip to previous slot 
+//   m->bootcount = 0;
+//   m->image_state = IMG_STATE_REVERTED;
+//   Metadata_Save(m); 
+//   return 1;
+// }
 
 void update_image_state(Metadata *m) {
   if (m->image_state == IMG_STATE_PENDING) {

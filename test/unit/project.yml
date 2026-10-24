@@ -56,7 +56,7 @@
   :enabled:
     #- beep                           # beeps when finished, so you don't waste time waiting for ceedling
     - module_generator                # handy for quickly creating source, header, and test templates
-    #- gcov                           # test coverage using gcov. Requires gcc, gcov, and a coverage analyzer like gcovr
+    - gcov                           # test coverage using gcov. Requires gcc, gcov, and a coverage analyzer like gcovr
     #- bullseye                       # test coverage using bullseye. Requires bullseye for your platform
     #- command_hooks                  # write custom actions to be called at different points during the build process
     #- compile_commands_json_db       # generate a compile_commands.json file
@@ -97,30 +97,24 @@
 # see documentation for the many options for specifying this.
 :paths:
   :test:
-    - +:test/**
-    - -:test/support
+    - .
+    - -:build/**
+    - -:../support/**
   :source:
-    - ../../bootutil/transport/uart**
-    - ../../bootutil/meta**
-    - ../../bootutil/crypto/**
+    - ../../stmboot/bootutil/**
   :include:
-    - ../../bootutil
-    - ../../bootutil/transport/uart
-    - ../../bootutil/meta
-    - ../../bootutil/crypto
-    - ../../../platform/pal
-    - ../../../platform
-    - ../../../platform/stm32/f1
-    - ../../../platform/bsp/f103rb
-    - ../../../drivers/STM32F1xx_HAL_Driver/Inc
-    - ../../../drivers/CMSIS/Include
-    - ../../../drivers/CMSIS/Device/ST/STM32F1xx/Include
-    - ../../../lib/
-    - ../../../lib/aes/inc
-    - ../../../lib/sha256/inc
-    - ../../../lib/uECC
+    - ../support
+    - ../../stmboot/bootutil/meta
+    - ../../stmboot/bootutil
+    - ../../stmboot/bootutil/transport/*/
+    - ../../platform/bsp/*/
+    - ../../platform/pal
+    - ../../platform
+
+    - ../../stmboot/bootutil/crypto
+    - ../../lib/aes/inc
   :support:
-    - test/support
+    - ../support
   :libraries: []
 
 # You can even specify specific files to add or remove from your test
@@ -141,6 +135,7 @@
     - BOARD_F103RB                   # so platform.h resolves correctly
     - TEST
     - STM32F103xB
+    - UNIT_TEST
   :release: []
 
   # Enable to inject name of a test as a unique compilation symbol into its respective executable build. 
@@ -148,16 +143,17 @@
 
 # Configure additional command line flags provided to tools used in each build step
 # :flags:
-#   :release:
-#     :compile:         # Add '-Wall' and '--02' to compilation of all files in release target
-#       - -Wall
-#       - --O2
-#   :test:
-#     :compile:
-#       '(_|-)special': # Add '-pedantic' to compilation of all files in all test executables with '_special' or '-special' in their names
-#         - -pedantic
-#       '*':            # Add '-foo' to compilation of all files in all test executables
-#         - -foo
+  # :release:
+  #   :compile:         # Add '-Wall' and '--02' to compilation of all files in release target
+  #     - -Wall
+  #     - --O2
+  # :test:
+  #   :compile:
+      # '(_|-)special': # Add '-pedantic' to compilation of all files in all test executables with '_special' or '-special' in their names
+      #   - -pedantic
+      # '*':            # Add '-foo' to compilation of all files in all test executables
+      #   - -foo
+      #   - -fprofile-abs-path
 
 # Configuration Options specific to CMock. See CMock docs for details
 :cmock:

@@ -25,6 +25,7 @@ set(APP_SOURCES
     bootutil/blupdate/blupdate.c
     bootutil/meta/metadata.c
     bootutil/img_security.c
+    bootutil/rollback_policy.c
     bootutil/crypto/verify.c
     bootutil/crypto/aes_ctr.c
     ../lib/printf-stdarg.c
@@ -52,22 +53,14 @@ set(APP_INCLUDES
 
     #irot
     ../iROT/inc
+    ../iROT/keys
+
+    #testing
+    #unit testing
+    ../test/unit/support
 )
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
-# ── static analysis — host build, no ARM toolchain ───────────────────────
-# Only included when STATIC_ANALYSIS=ON, set by the preset
-if(STATIC_ANALYSIS)
-    message(STATUS "Static analysis mode — no firmware target built")
-    include(tests/CMakeLists.txt)
-    return()  # skip all firmware targets below this point
-endif()
-
-if(UNIT_TESTS)
-    message(STATUS "Unit test mode — no firmware target built")
-    include(tests/CMakeLists.txt)
-    return()  # skip all firmware targets below this point
-endif()
 # ── target ───────────────────────────────────────────────────────
 add_executable(Bootloader
     ${BOARD_SOURCES}
@@ -79,6 +72,7 @@ target_include_directories(Bootloader PRIVATE
     ${BOARD_INCLUDES}
     ${APP_INCLUDES}
     ../iROT/inc
+    ../iROT/keys
 )
 
 target_compile_definitions(Bootloader PRIVATE
@@ -121,6 +115,8 @@ target_link_options(Bootloader PRIVATE
     --specs=nano.specs
     --specs=nosys.specs
 )
+
+option(UNIT_TEST "Build for unit testing" OFF)
 
 # ── post-build ─────────────────────────────────────
 add_custom_command(TARGET Bootloader POST_BUILD

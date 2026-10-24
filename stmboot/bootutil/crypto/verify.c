@@ -1,6 +1,10 @@
 #include "verify.h"
+#ifdef STMBOOT_TEST_KEYS
+#include "test_public_key.h"
+#else
 #include "crypto/public_key.h"
 #include "/Users/siddharthmanikant/Desktop/Bachelor_Project/iROT/keys/iROT_public_key.h"
+#endif
 #include "uECC/uECC.h"
 #include "sha256/inc/sha256.h"
 

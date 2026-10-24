@@ -7,8 +7,13 @@
 #define SLOT_NUM_PAGES           47U // was 48U
 #define SLOTB_START_ADDRESS      0x08013C00UL // was 0x08012000U
 // #define METADATA_ADDRESS 0x0801E000U 
-#define METADATA_ADDRESS_SLOT1         0x0801F800UL // 1kbytes each slot meta
-#define METADATA_ADDRESS_SLOT2         0x0801FC00UL
+
+#ifdef UNIT_TEST
+#else
+    #define METADATA_ADDRESS_SLOT1         0x0801F800UL // 1kbytes each slot meta
+    #define METADATA_ADDRESS_SLOT2         0x0801FC00UL
+#endif
+
 #define FLASH_EOF                0x08020000
 
 #define UART_RECEP_CHUNK_SIZE 1024U // bytes recieved per iteration matching one flash page

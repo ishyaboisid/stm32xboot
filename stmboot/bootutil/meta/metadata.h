@@ -3,7 +3,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "platform.h"
+
+#ifdef UNIT_TEST
+    #include "pal_flash.h"
+#else
+    #include "platform.h"
+#endif
 
 #define METADATA_MAGIC 0xDEADBEEFU // start of metadata
 #define METADATA_SLOT_SIZE 0x400UL // 1kb

@@ -4,10 +4,17 @@
  */
 
 #include "uart_reception.h"
-#include "platform.h"
 #include "metadata.h"
-#include "board_config.h"
-#include "/Users/siddharthmanikant/Desktop/Bachelor_Project/stmboot/bootutil/img_security.h"
+#include "img_security.h"
+
+#ifdef UNIT_TEST
+    #include "metadata_test_config.h"
+    #include "pal_uart.h"
+    #include "pal_crc.h"
+    #include "pal_flash.h"
+#else
+    #include "platform.h"
+#endif
 
 #define BYTE_TIMEOUT_MS  2000U
 
