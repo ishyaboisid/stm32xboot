@@ -1,6 +1,8 @@
 // screen /dev/tty.usbmodem103 115200 
 #include "main.h"
 #include "blupdate.h"
+#include "diagnostics/wear.h"
+
 Metadata meta;
 
 extern uint32_t iwdg_reset;
@@ -127,8 +129,33 @@ void check_interrupted_write(Metadata *m) {
   }
 }
 
+static uint32_t prof_wait;   // cycles in check_for_update() (contains the 5 s button window)
+static uint32_t prof_verify; // cycles in the pre-jump Reverify_Signature()
+
+static char *prof_str(char *p, const char *s) { while (*s) *p++ = *s++; return p; }
+static char *prof_num(char *p, uint32_t v) {
+  char t[10]; unsigned n = 0;
+  do { t[n++] = (char)('0' + v % 10U); v /= 10U; } while (v);
+  while (n) *p++ = t[--n];
+  return p;
+}
+
+// One line with raw cycles; convert on the host (ms = cycles / hclk * 1000). No 64-bit maths on the MCU.
+static void prof_report(uint32_t boot_cycles) {
+  char buf[96]; char *p = buf;
+  p = prof_str(p, "PROF hclk=");   p = prof_num(p, PAL_DWT_CoreHz());
+  p = prof_str(p, " boot=");       p = prof_num(p, boot_cycles);
+  p = prof_str(p, " wait=");       p = prof_num(p, prof_wait);
+  p = prof_str(p, " verify=");     p = prof_num(p, prof_verify);
+  p = prof_str(p, " erases=");     p = prof_num(p, BootPlatform_GetFlashEraseCount());
+  p = prof_str(p, "\r\n");
+  PAL_UART_Transmit((uint8_t *)buf, (uint16_t)(p - buf), 100);
+}
+
 int main(void)
 {
+  PAL_DWT_Init(); // CYCCNT = 0, value = main() -> jump
+
   System_Init();
 
   BL_LOG("Sys Init Complete, loading Metadata...\r\n"); 
@@ -149,8 +176,10 @@ int main(void)
   check_for_bl_update(&meta); 
 
   BL_LOG("Checking for update...\r\n");
+  uint32_t w0 = PAL_DWT_Cycles();
   check_for_update(&meta, AUTOMATIC_UPDATE);
-  
+  prof_wait = PAL_DWT_Cycles() - w0;
+
   goto_application(&meta);
 
   while (1) {}
@@ -176,10 +205,15 @@ static void goto_application(Metadata *meta) {
     BL_LOG("Jumping to application...\r\n");
     PAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
     BL_LOG("Verifying firmware signature..\r\n");
-    if (!Reverify_Signature(meta, boot_addr)) { // todo
+    uint32_t v0 = PAL_DWT_Cycles();            // snapshot before security
+    int sig_ok = Reverify_Signature(meta, boot_addr);
+    prof_verify = PAL_DWT_Cycles() - v0;       // snapshot after security 
+    if (!sig_ok) { // todo
       BL_LOG("Firmware signature verification failed, staying in bootloader...\r\n");
       return; 
     }
+    prof_report(PAL_DWT_Cycles());             // main() -> jump
+
     void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (boot_addr + 4U));
     /** @todo implement PAL functions needed before jumping to app */
     /*
@@ -225,6 +259,10 @@ static void check_for_update(Metadata *meta, uint8_t AUTOMATIC_UPDATE) {
     PAL_UARTEx_Receive_DMA(header_buf, sizeof(header_buf));
     if (UART_Receive(header_buf, meta, 0) == RECEP_OK) {
       Metadata_UpdateAfterRecieve(meta, meta->SLOTA_LATEST);
+      
+      volatile uint32_t erase_count = BootPlatform_GetFlashEraseCount(); // wear
+      // PAL_UART_Transmit((uint8_t *)&erase_count, sizeof(erase_count), 100);
+      
       PAL_UART_Transmit((uint8_t *)"OK\r\n", 4, 100);
       BL_LOG("Firmware update done!\r\nRebooting...\r\n");
       PAL_Delay(100);

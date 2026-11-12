@@ -21,6 +21,7 @@
 
 // abstract PAL interface — same headers regardless of board
 // implementations are selected by CMake based on BOARD
+#include "pal/pal_dwt.h"
 #include "pal/pal_uart.h"
 #include "pal/pal_flash.h"
 #include "pal/pal_gpio.h"

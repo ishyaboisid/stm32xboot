@@ -6,6 +6,7 @@
 #include "iROT_clock.h"
 #include "iROT_verify.h"
 #include "stm32f1xx_hal.h"
+#include "diagnostics/wear.h"
 
 #define SYST_CSR (*(volatile uint32_t *)0xE000E010U)
 
@@ -100,6 +101,7 @@ static void enter_recovery(IROT_Metadata *m) { // todo
 
 static void goto_stmboot(IROT_Metadata *meta) {
     if ((*(volatile uint32_t *)STMBOOT_ADDRESS) == 0xFFFFFFFF) {
+        volatile uint32_t erase_count = BootPlatform_GetFlashEraseCount();
         return;
     } else {
         // if (meta->boot_state != 0xFFFFFFFFUL) { // if it is not first boot verify, maybe also check for if (meta->bl_bin_size == 0) return; ? 
@@ -108,6 +110,7 @@ static void goto_stmboot(IROT_Metadata *meta) {
         //         return; 
         //     }
         // }
+        volatile uint32_t erase_count = BootPlatform_GetFlashEraseCount(); // irot flash wear, can only see it during debugging as of yet
 
         void (*app_reset_handler)(void) = (void *) ( *(volatile uint32_t *) (STMBOOT_ADDRESS + 4U));
         HAL_DeInit();        // de-init peripherals + mask SysTick IRQ

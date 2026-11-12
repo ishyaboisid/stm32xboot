@@ -1,6 +1,7 @@
 #include "pal/pal_flash.h"
 #include "stm32f1xx_hal.h"
 #include "board_config.h"
+#include "diagnostics/wear.h"
 
 static int is_valid_slot_address(uint32_t addr) { // private fn
     return ( (( addr >= SLOTA_START_ADDRESS) && (addr < (SLOTB_START_ADDRESS + (SLOT_NUM_PAGES * FLASH_PAGE_SIZE_BL)))) ||
@@ -26,6 +27,9 @@ PAL_Flash_StatusTypeDef PAL_Flash_ErasePage(uint32_t page_address) {
     HAL_FLASH_Lock();
     __enable_irq();
     if (status != HAL_OK || page_error != 0xFFFFFFFF) return FLASH_ERR_ERASE; // 0xFFFFFFFF means that all the pages have been correctly erased
+
+    BootPlatform_IncrementFlashEraseCount(); // wear metric
+
     return FLASH_OK;
 }
 PAL_Flash_StatusTypeDef PAL_Flash_EraseSlot(uint32_t slot_start, uint32_t num_pages) {

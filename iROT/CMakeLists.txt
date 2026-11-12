@@ -28,6 +28,7 @@ set(APP_SOURCES
     ../lib/sha256/src/sha256.c
     ../lib/uECC/uECC.c
     src/hal_handles.c
+    ../platform/perf/diagnostics/wear.c
 )
 
 set(APP_INCLUDES
@@ -37,6 +38,7 @@ set(APP_INCLUDES
     ../lib
     keys
     /Users/siddharthmanikant/Desktop/Bachelor_Project/platform
+    ../platform/perf
 )
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 

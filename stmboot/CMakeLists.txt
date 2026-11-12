@@ -33,6 +33,8 @@ set(APP_SOURCES
     ../lib/sha256/src/sha256.c
     ../lib/uECC/uECC.c
 
+    #diagnostics
+    ../platform/perf/diagnostics/wear.c
     #irot
     ../iROT/src/iROT_metadata.c
 )
@@ -50,6 +52,9 @@ set(APP_INCLUDES
     ../lib/aes/inc
     ../lib/sha256/inc
     ../lib/uECC
+
+    #diagnostics
+    ../platform/perf
 
     #irot
     ../iROT/inc

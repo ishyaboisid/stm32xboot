@@ -29,6 +29,7 @@ set(BOARD_SOURCES
     ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_time.c
     ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_crc.c
     ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_iwdg.c
+    ${CMAKE_SOURCE_DIR}/../platform/stm32/f1/pal/pal_dwt.c
 )
 
 set(BOARD_INCLUDES

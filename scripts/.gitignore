@@ -7,3 +7,5 @@ iROT_private_key.pem
 sign_iROT.py
 STMBoot.enc.bin
 STMBoot.signed.bin
+bootloader_timing.csv
+timing_report.py

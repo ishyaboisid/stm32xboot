@@ -8,6 +8,7 @@ import argparse
 
 import encrypt_firmware
 import sign_firmware
+from timing_report import UpdateTimer
 
 
 CHUNK_SIZE = 1024
@@ -27,6 +28,9 @@ BL_VERSION = (1, 1)
 
 PORT       = "/dev/tty.usbmodem103"
 BAUDRATE   = 115200
+
+# Append successful bootloader timing results here; None means print only.
+TIMING_CSV = "bootloader_timing.csv"
 
 def compute_crc32_stm32(data: bytes) -> int:
     """
@@ -122,6 +126,8 @@ def expect_ack(ser, context, timeout_s=5):
 
 
 def send_bl_update(ser):
+    tm = UpdateTimer()
+
     # ------------------------------------------------------------------
     # 1. HEADER
     #
@@ -144,6 +150,7 @@ def send_bl_update(ser):
         BL_VERSION[1],
     ])
 
+    tm.mark("start")
     ser.write(header)
 
     # C sends either:
@@ -171,6 +178,8 @@ def send_bl_update(ser):
         if line == "NACK":
             raise RuntimeError("Bootloader rejected header")
 
+    tm.mark("slot")
+
     # C then sends ACK after selecting/erasing the slot.
     expect_ack(ser, "header")
 
@@ -178,21 +187,17 @@ def send_bl_update(ser):
 
     # ------------------------------------------------------------------
     # 2. SIGN BOOTLOADER
-    #
-    # The signature is appended to the plaintext binary.
-    #
-    # Result:
-    #
-    #   [ bootloader payload ][ 64-byte signature ]
     # ------------------------------------------------------------------
 
     print("\nSigning bootloader...")
+    tm.mark("prep0")
 
     sign_firmware.sign_firmware(
         IROT_PRIVATE_KEY,
         str(STMBOOT_BIN),
         str(SIGNED_PATH),
     )
+    tm.mark("signed")
 
     signed_plaintext = SIGNED_PATH.read_bytes()
 
@@ -200,12 +205,6 @@ def send_bl_update(ser):
 
     # ------------------------------------------------------------------
     # 3. ENCRYPT SIGNED BOOTLOADER
-    #
-    # encrypt_firmware returns the IV.
-    #
-    # The C bootloader receives this IV and initializes:
-    #
-    #   AES_init_ctx_iv(&ctx, AES_KEY, meta->iv);
     # ------------------------------------------------------------------
 
     print("Encrypting signed bootloader...")
@@ -214,6 +213,7 @@ def send_bl_update(ser):
         str(SIGNED_PATH),
         str(ENCRYPTED_PATH),
     )
+    tm.mark("encrypted")
 
     encrypted_data = ENCRYPTED_PATH.read_bytes()
 
@@ -227,54 +227,27 @@ def send_bl_update(ser):
 
     # ------------------------------------------------------------------
     # 4. CRC
-    #
-    # IMPORTANT:
-    #
-    # The C bootloader decrypts each chunk BEFORE calculating CRC:
-    #
-    #   AES_CTR_xcrypt_buffer(...)
-    #   PAL_CRC_Accumulate(chunk, chunk_len)
-    #
-    # Therefore CRC must be calculated over signed plaintext,
-    # NOT encrypted_data.
     # ------------------------------------------------------------------
 
     crc = compute_crc32_stm32(signed_plaintext)
+    tm.mark("crc")
+    tm.mark("prep1")
 
     print(f"CRC32: 0x{crc:08X}")
 
     # ------------------------------------------------------------------
     # 5. SIZE
-    #
-    # C:
-    #
-    #   PAL_UARTEx_Receive_DMA(size_buf, sizeof(size_buf));
-    #
-    #   uint32_t total_len =
-    #       size_buf[0]
-    #       | size_buf[1] << 8
-    #       | size_buf[2] << 16
-    #       | size_buf[3] << 24;
-    #
-    # Therefore little-endian uint32.
     # ------------------------------------------------------------------
 
     print(f"\nSending SIZE ({len(encrypted_data)} bytes)...")
 
+    tm.mark("xfer0")
     ser.write(struct.pack("<I", len(encrypted_data)))
 
     expect_ack(ser, "size")
 
     # ------------------------------------------------------------------
     # 6. IV
-    #
-    # C expects exactly 16 bytes:
-    #
-    #   PAL_UARTEx_Receive_DMA(meta->iv, sizeof(iv));
-    #
-    # Then:
-    #
-    #   AES_init_ctx_iv(&ctx, AES_KEY, meta->iv);
     # ------------------------------------------------------------------
 
     if len(iv) != 16:
@@ -287,18 +260,10 @@ def send_bl_update(ser):
     ser.write(iv)
 
     expect_ack(ser, "IV")
-    # time.sleep(0.05)
+    tm.mark("iv_ack")
 
     # ------------------------------------------------------------------
     # 7. DATA
-    #
-    # C receives:
-    #
-    #   chunk_len = min(remaining_data, UART_RECEP_CHUNK_SIZE)
-    #
-    # So CHUNK_SIZE here must match UART_RECEP_CHUNK_SIZE in C.
-    #
-    # The transmitted data is ENCRYPTED.
     # ------------------------------------------------------------------
 
     print("\nSending encrypted DATA...")
@@ -312,7 +277,7 @@ def send_bl_update(ser):
             offset:offset + CHUNK_SIZE
         ]
         ser.write(chunk)
-        
+
         expect_ack(
             ser,
             f"chunk {chunk_num}"
@@ -331,54 +296,32 @@ def send_bl_update(ser):
         )
 
     print()
+    tm.mark("data1")
 
-    # C sends one additional ACK after the entire data stream:
-    #
-    #   send_ack(); // for data as a whole
-    #
+    # C sends one additional ACK after the entire data stream.
     expect_ack(ser, "whole data")
+    tm.mark("done_ack")
 
     # ------------------------------------------------------------------
     # 8. CRC
-    #
-    # C expects:
-    #
-    #   uint8_t crc_buf[4];
-    #   PAL_UART_Receive(crc_buf, 4, ...);
-    #
-    # Little endian.
     # ------------------------------------------------------------------
 
     print(f"Sending CRC (0x{crc:08X})...")
 
+    tm.mark("crc0")
     ser.write(struct.pack("<I", crc))
 
-    # C sends ACK only if CRC matches:
-    #
-    #   if (calculated_crc != received_crc_value)
-    #       return RECEP_ERR_CRC32;
-    #
-    #   send_ack();
-    #
     expect_ack(ser, "CRC")
+    tm.mark("crc_ack")
 
     # ------------------------------------------------------------------
     # 9. ECC / SIGNATURE VERIFICATION
-    #
-    # C now extracts the last 64 bytes from flash and calls:
-    #
-    #   Verify_BL(...);
-    #
-    # On success:
-    #
-    #   send_ack();
-    #
-    # There is currently NO "OK\\r\\n" in the C code.
     # ------------------------------------------------------------------
 
     print("Waiting for signature verification...")
 
     expect_ack(ser, "signature")
+    tm.mark("sig_ack")
 
     print(
         f"\nSuccess — bootloader v{BL_VERSION[0]}.{BL_VERSION[1]} "
@@ -389,6 +332,8 @@ def send_bl_update(ser):
     print(f"  Size       : {len(signed_plaintext)} bytes")
     print(f"  CRC32      : 0x{crc:08X}")
     print(f"  IV         : {iv.hex()}")
+
+    tm.report("bootloader", slot, len(encrypted_data), BAUDRATE, TIMING_CSV)
 
     return
 
